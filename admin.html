@@ -203,10 +203,10 @@ input[type=range]::-moz-range-thumb{width:12px;height:20px;background:var(--acc)
 <div class="scrim" id="scrim" data-act="close"></div>
 <aside class="drawer" id="drawer" aria-hidden="true" aria-label="Publish"><div class="dr-h"><span class="disp">Publish</span><span class="mono mute" id="chgtxt">—</span><button class="cb" data-act="close" aria-label="Close">✕</button></div><div class="dr-b" id="drb"></div></aside>
 <div class="toast mono" id="toast" role="status" aria-live="polite"></div>
-<script src="admin-core.js"></script>
+<script src="admin-core.js?v=2"></script>
 <script>
 (function () {
-  var go = function () { var a = document.createElement('script'); a.src = 'admin.js'; document.body.appendChild(a); };
+  var go = function () { var a = document.createElement('script'); a.src = 'admin.js?v=2'; document.body.appendChild(a); };
   var tag = function () { var p = document.createElement('script'); p.src = 'content.js'; p.onload = go; p.onerror = go; document.head.appendChild(p); };
   fetch('content.js', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.text(); }).then(function (t) { var s = document.createElement('script'); s.textContent = t; document.head.appendChild(s); if (!window.FL_CONTENT) throw 0; go(); }).catch(tag);
 })();

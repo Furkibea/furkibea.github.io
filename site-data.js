@@ -1,7 +1,12 @@
 // site-data.js — resolves site content: the published content.js, or the panel's draft when the page is opened with ?preview
 (function () {
   const FL = window.FL = window.FL || {};
-  const pub = window.FL_CONTENT || {};
+  // content.js is revalidated with the server on every visit (ETag, so usually a tiny 304): a publish shows up on the next
+  // page load instead of after the host's 10-minute browser cache. Falls back to a plain <script> (file://, old browsers).
+  const tag = () => new Promise((res) => { const s = document.createElement('script'); s.src = 'content.js'; s.onload = s.onerror = () => res(window.FL_CONTENT || {}); document.head.appendChild(s); });
+  const pub = window.FL_CONTENT ? Promise.resolve(window.FL_CONTENT) : window.fetch && location.protocol !== 'file:'
+    ? fetch('content.js', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw 0; return r.text(); }).then((t) => { const s = document.createElement('script'); s.textContent = t; document.head.appendChild(s); s.remove(); if (!window.FL_CONTENT) throw 0; return window.FL_CONTENT; }).catch(tag)
+    : tag();
   const preview = /[?&]preview\b/.test(location.search);
   const norm = (d) => Object.assign({ profile: {}, reels: [], worlds: [], logs: [] }, d || {});
   function draft() {
@@ -25,7 +30,7 @@
     });
   }
   FL.preview = preview;
-  FL.data = (preview ? draft().then((d) => d || pub) : Promise.resolve(pub)).then(norm);
+  FL.data = (preview ? draft().then((d) => d || pub) : pub).then(norm);
   if (preview) addEventListener('DOMContentLoaded', () => {
     const b = document.createElement('div'); b.textContent = 'Preview · unpublished draft';
     b.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:300;background:#ff5b1f;color:#050506;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.14em;text-transform:uppercase;padding:8px 12px;pointer-events:none';

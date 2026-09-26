@@ -22,7 +22,9 @@
     worlds: { label: 'Games', one: 'Game', fresh: () => ({ id: A.uid('w'), name: 'New game', studio: '', genre: '', desc: '', visits: 0, ccu: 0, color: SW[1], thumb: '', url: '', placeId: '', universeId: 0, favorites: 0, maxPlayers: 0, thumbs: [], status: 'live', release: '' }) },
     logs: { label: 'Transmissions', one: 'Transmission', cap: 8, fresh: () => ({ id: A.uid('t'), date: today(), text: '', media: '' }) },
   };
-  const S = { tab: 'reels', sel: {}, sizes: {}, stale: false, busy: false, draft: null, base: null, live: null, stamp: '' };
+  const S = { tab: 'reels', sel: {}, sizes: {}, stale: false, busy: false, draft: null, base: null, live: null, stamp: '', local: null };
+  // publishing is ready when the panel runs through admin-local.py (git push, no token) or a GitHub token is saved in this browser
+  const pubReady = () => !!S.local || A.ghReady(A.ghCfg());
   const pane = $('#pane');
   const list = () => (S.draft && S.draft[S.tab]) || [];
   const cur = () => (COL[S.tab] ? list().find((x) => x.id === S.sel[S.tab]) : null);
@@ -130,8 +132,9 @@
   }
   function settingsHTML() {
     const g = A.ghCfg();
-    return `<div class="pgrid">
-<section class="card wide"><h3 class="mono">One-click publishing with GitHub Pages</h3><ol class="steps"><li>Put the site folder in a GitHub repository and turn on <b>Pages</b> (repository Settings → Pages).</li><li>Create a <b>fine-grained token</b> (GitHub → Settings → Developer settings) for that repository only, with <b>Contents: Read and write</b>.</li><li>Fill in the fields below and press <b>Test connection</b>. From then on, Publish uploads new media and content.js in a single commit.</li></ol></section>
+    const local = S.local ? `<section class="card wide"><h3 class="mono">Publishing from this PC · ready</h3><p class="p">This panel was opened with <b>admin-ac.bat</b>, so Publish runs <b>git push</b> with the GitHub login already on this computer. No token needed: press Publish and the site updates in about a minute.</p><p class="hint mono">${esc(S.local.owner + '/' + S.local.repo)} · branch ${esc(S.local.branch)}</p></section>` : '';
+    return `<div class="pgrid">${local}
+<section class="card wide"><h3 class="mono">${S.local ? 'Publishing from other devices' : 'One-click publishing'}</h3><ol class="steps"><li><b>On your PC:</b> double-click <b>admin-ac.bat</b> in the site folder. The panel opens and Publish pushes with your own git login, no token.</li><li><b>From any browser:</b> save a GitHub token here once. <a class="lnk" href="${esc(A.tokenURL(g))}" target="_blank" rel="noopener noreferrer">Create the token on GitHub ↗</a> (the form opens pre-filled), choose <b>Only select repositories → ${esc(g.repo || 'your site repository')}</b>, press <b>Generate token</b>, then paste it below. The connection is tested automatically.</li></ol></section>
 <section class="card"><h3 class="mono">Repository</h3><div class="g2"><label class="fld"><span class="mono">Owner</span><input class="in" data-g="owner" value="${esc(g.owner)}" placeholder="your-github-name" spellcheck="false"></label><label class="fld"><span class="mono">Repository</span><input class="in" data-g="repo" value="${esc(g.repo)}" placeholder="portfolio" spellcheck="false"></label></div><div class="g2"><label class="fld"><span class="mono">Branch</span><input class="in" data-g="branch" value="${esc(g.branch || 'main')}" spellcheck="false"></label><label class="fld"><span class="mono">Site folder in repo</span><input class="in" data-g="path" value="${esc(g.path)}" placeholder="empty = repository root" spellcheck="false"></label></div><label class="fld"><span class="mono">Token</span><input class="in" type="password" data-g="token" value="${esc(g.token)}" autocomplete="off" placeholder="github_pat_…" spellcheck="false"><em class="hint mono">Stored only in this browser. Never share it.</em></label><div class="brow"><button class="btn sm" data-act="ghtest">Test connection</button>${g.token ? '<button class="cb wide danger" data-act="ghforget">Forget token</button>' : ''}</div><p class="res mono" id="ghres"></p></section>
 <section class="card"><h3 class="mono">Other hosting</h3><p class="p">Download your changes as a package and copy its contents into the site folder on your host.</p><div class="brow"><button class="cb wide" data-act="zip">Download package</button><button class="cb wide" data-act="cjs">Download content.js</button></div><h3 class="mono gap">Draft</h3><p class="p">Your draft is saved in this browser until you publish. Discarding it loads the live version again.</p><div class="brow"><button class="cb wide danger" data-act="discard">Discard draft</button></div></section>
 </div>`;
@@ -223,7 +226,13 @@
       } catch (e) { toast('Could not reach Roblox (' + e.message + '). Try again in a minute.'); t.disabled = false; t.textContent = 'Fetch from Roblox'; }
     },
     sumvis() { S.draft.profile.stats.visits = Math.round(S.draft.worlds.reduce((a, w) => a + (+w.visits || 0), 0)); touch(); renderPane(); toast('Visits updated from your games.'); },
-    publish() { openDrawer(); }, close() { closeDrawer(); },
+    // Publish publishes: review drawer + commit in one click when publishing is set up; otherwise explain how to set it up
+    async publish() {
+      if (S.busy) { showDrawer(); return; }
+      if (!A.diff(S.draft, S.base).count) { toast('Nothing to publish: the live site already matches this draft.'); return; }
+      await openDrawer(); const b = $('[data-act="ghpub"]'); if (b && !b.disabled) ghPublish();
+    },
+    close() { closeDrawer(); },
     gosettings() { closeDrawer(); go('publish'); },
     async ghtest(t) {
       const g = A.ghCfg(), r = $('#ghres');
@@ -242,26 +251,36 @@
 
   // ---------- publish ----------
   async function pendingUp() { const now = A.refs(S.draft), base = A.refs(S.base), out = []; for (const [p, b] of await A.all()) if (b && now.has(p) && !base.has(p)) out.push([p, b]); return out; }
+  function showDrawer() { $('#drawer').classList.add('on'); $('#drawer').setAttribute('aria-hidden', 'false'); $('#scrim').classList.add('on'); }
   async function openDrawer() {
-    const d = A.diff(S.draft, S.base), g = A.ghCfg(), ok = g.owner && g.repo && g.token, up = await pendingUp(), tot = up.reduce((a, [, b]) => a + b.size, 0), big = up.some(([, b]) => b.size > 95 * MB) || S.noLive;
+    const d = A.diff(S.draft, S.base), g = A.ghCfg(), ok = pubReady(), up = await pendingUp(), tot = up.reduce((a, [, b]) => a + b.size, 0), big = up.some(([, b]) => b.size > 95 * MB) || S.noLive;
+    const target = S.local ? 'Publish · git push from this PC' : 'Publish to ' + g.owner + '/' + g.repo;
     $('#drb').innerHTML = `<div class="sum">${d.count ? d.lines.map(([s, t]) => `<div class="ln"><b>${s}</b><span>${esc(t)}</span></div>`).join('') : '<div class="ln"><b>✓</b><span class="mute">No changes. The live site matches this draft.</span></div>'}</div>` +
       (up.length ? `<div class="upl mono"><span>Media to upload</span><span>${up.length} file${up.length === 1 ? '' : 's'} · ${A.mb(tot)}</span></div><div>${up.map(([p, b]) => `<div class="fr mono"><span>${esc(p.split('/').pop())}</span><span class="${b.size > 95 * MB ? 'bad' : ''}">${A.mb(b.size)}</span></div>`).join('')}</div>` : '') +
       (S.noLive ? '<p class="warn bad mono">The live content (content.js) did not load, so publishing is paused to protect the site. Reload the panel from your site folder and try again.</p>' : big ? '<p class="warn bad mono">One file is over GitHub\'s 100 MB limit. Trim it, or host it elsewhere and paste its link.</p>' : '') +
       `<label class="fld"><span class="mono">Commit message</span><input class="in" id="cmsg" value="Weekly update — ${today()}"></label>` +
-      `<div class="go">${ok ? `<button class="btn" data-act="ghpub"${d.count && !big ? '' : ' disabled'}><span>Publish to ${esc(g.owner + '/' + g.repo)}</span><span class="ar">→</span></button>` : '<button class="btn" data-act="gosettings"><span>Set up one-click publishing</span><span class="ar">→</span></button>'}<button class="cb wide" data-act="zip"${d.count ? '' : ' disabled'}>Download package instead</button></div><ol class="plog mono" id="plog"></ol>`;
-    $('#drawer').classList.add('on'); $('#drawer').setAttribute('aria-hidden', 'false'); $('#scrim').classList.add('on');
+      `<div class="go">${ok ? `<button class="btn" data-act="ghpub"${d.count && !big ? '' : ' disabled'}><span>${esc(target)}</span><span class="ar">→</span></button>` : '<button class="btn" data-act="gosettings"><span>Set up publishing</span><span class="ar">→</span></button><p class="warn mono">Publishing isn\'t set up in this browser yet. On your PC, open the panel with <b>admin-ac.bat</b> (no token), or save a GitHub token once under Publishing.</p>'}<button class="cb wide" data-act="zip"${d.count ? '' : ' disabled'}>Download package instead</button></div><ol class="plog mono" id="plog"></ol>`;
+    showDrawer();
   }
   function closeDrawer() { if (S.busy) return; $('#drawer').classList.remove('on'); $('#drawer').setAttribute('aria-hidden', 'true'); $('#scrim').classList.remove('on'); }
   const plog = (t, c, html) => { const l = $('#plog'); if (l) l.insertAdjacentHTML('beforeend', `<li class="${c || ''}">${html || esc(t)}</li>`); };
   async function ghPublish() {
-    if (S.busy || S.noLive) return; S.busy = true; const btn = $('[data-act="ghpub"]'); if (btn) btn.disabled = true; $('#plog').innerHTML = '';
+    if (S.busy || S.noLive || !pubReady()) return; S.busy = true; const btn = $('[data-act="ghpub"]'); if (btn) btn.disabled = true; $('#plog').innerHTML = '';
     try {
       const up = await pendingUp(), now = A.refs(S.draft), rm = [...A.refs(S.base)].filter((p) => !now.has(p));
       const out = clone(S.draft); out.updated = new Date().toISOString();
-      const r = await A.ghPublish(A.ghCfg(), up, rm, A.serialize(out), ($('#cmsg').value || '').trim() || 'Update content', (t) => plog(t));
+      const msg = ($('#cmsg').value || '').trim() || 'Update content', log = (t) => plog(t);
+      const r = S.local ? await A.localPublish(up, rm, A.serialize(out), msg, log) : await A.ghPublish(A.ghCfg(), up, rm, A.serialize(out), msg, log);
       S.draft.updated = out.updated; S.base = clone(S.draft); S.live = clone(S.draft); await cleanup(false); await persist(); chrome(); if (COL[S.tab]) { renderList(); renderEditor(); }
-      plog('', 'ok', `Published. GitHub Pages refreshes the site in about a minute. <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">View commit ↗</a>`);
-      toast('Published.');
+      if (r.nothing) { plog('Nothing new to commit: the repository already has these changes.', 'ok'); toast('Already published.'); }
+      else {
+        plog('', 'ok', `Published. <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">View commit ↗</a>`);
+        const site = A.siteURL(S.local || A.ghCfg());
+        if (site) {
+          plog('GitHub Pages is updating the site (about a minute)…'); toast('Published. The site updates in about a minute.');
+          A.waitLive(site, out.updated).then((ok) => { plog('', ok ? 'ok' : '', ok ? `Live now. <a href="${esc(site)}" target="_blank" rel="noopener noreferrer">Open the site ↗</a>` : 'Still updating. GitHub Pages can take a few minutes; the site refreshes on its own.'); if (ok) toast('Your changes are live.'); });
+        } else toast('Published.');
+      }
     } catch (e) { plog('Publish failed: ' + e.message, 'bad'); if (btn) btn.disabled = false; }
     S.busy = false;
   }
@@ -293,7 +312,11 @@
       if (S.tab === 'worlds') refreshW(); return;
     }
     if (el.dataset.p) { setP(el); return; }
-    if (el.dataset.g) { const g = A.ghCfg(); g[el.dataset.g] = el.value.trim(); A.ghSave(g); const r = $('#ghres'); if (r) { r.textContent = ''; r.className = 'res mono'; } }
+    if (el.dataset.g) {
+      const g = A.ghCfg(); g[el.dataset.g] = el.value.trim(); A.ghSave(g); const r = $('#ghres'); if (r) { r.textContent = ''; r.className = 'res mono'; }
+      // a pasted token is tested straight away
+      if (el.dataset.g === 'token' && /^(github_pat_|ghp_)\w{20,}$/.test(el.value.trim())) { clearTimeout(S.tt); S.tt = setTimeout(() => { const b = $('[data-act="ghtest"]'); if (b && !b.disabled) ACT.ghtest(b); }, 350); }
+    }
   });
   pane.addEventListener('change', (e) => {
     const el = e.target;
@@ -331,6 +354,7 @@
   // ---------- boot ----------
   (async function boot() {
     let ok = true; try { await A.ready(); } catch (e) { ok = false; }
+    S.local = await A.localPing();
     S.live = norm(window.FL_CONTENT);
     let d = null, b = null;
     if (ok) { try { d = await A.get('kv', 'draft'); b = await A.get('kv', 'base'); await A.cacheAll(); for (const [p, bl] of await A.all()) if (bl) S.sizes[p] = bl.size; } catch (e) { ok = false; } }

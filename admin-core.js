@@ -86,15 +86,23 @@
   };
 
   // ---------- GitHub (Git Data API → one commit per publish) ----------
-  const GK = 'fl-admin-gh', GD = { owner: '', repo: '', branch: 'main', path: '', token: '' };
-  A.ghCfg = () => { try { return Object.assign({}, GD, JSON.parse(localStorage.getItem(GK) || '{}')); } catch (e) { return Object.assign({}, GD); } };
+  // on <owner>.github.io the owner and repository are known already: only the token has to be pasted
+  const onPages = /^([a-z0-9-]+)\.github\.io$/i.exec(location.hostname), seg = location.pathname.split('/').filter(Boolean);
+  const GK = 'fl-admin-gh', GD = { owner: onPages ? onPages[1] : '', repo: onPages ? (seg.length > 1 ? seg[0] : location.hostname) : '', branch: 'main', path: '', token: '' };
+  A.ghCfg = () => { const c = Object.assign({}, GD); try { const s = JSON.parse(localStorage.getItem(GK) || '{}') || {}; Object.keys(s).forEach((k) => { if (s[k]) c[k] = s[k]; }); } catch (e) {} return c; };
+  A.tokenURL = (c) => 'https://github.com/settings/personal-access-tokens/new?name=' + encodeURIComponent((c.repo || 'site') + ' admin publish') + '&description=' + encodeURIComponent('Publish button in admin.html') + '&target_name=' + encodeURIComponent(c.owner || '') + '&expires_in=365&contents=write';
   A.ghSave = (c) => { try { localStorage.setItem(GK, JSON.stringify(c)); } catch (e) {} };
+  A.ghReady = (c) => !!(c.owner && c.repo && c.token);
   async function api(c, path, opt) {
     opt = opt || {}; let r;
     try { r = await fetch('https://api.github.com' + path, { method: opt.method || 'GET', headers: Object.assign({ Accept: 'application/vnd.github+json', Authorization: 'Bearer ' + c.token, 'X-GitHub-Api-Version': '2022-11-28' }, opt.body ? { 'Content-Type': 'application/json' } : {}), body: opt.body ? JSON.stringify(opt.body) : undefined }); }
     catch (e) { throw new Error('Could not reach GitHub. Check your connection.'); }
     let j = null; try { j = await r.json(); } catch (e) {}
-    if (!r.ok) { const m = (j && j.message) || 'HTTP ' + r.status; throw new Error(r.status === 401 ? 'GitHub rejected the token (401). Create a new one.' : r.status === 404 ? 'Not found (404). Check owner, repository and branch, and that the token has access to this repository.' : m); }
+    if (!r.ok) {
+      const m = (j && j.message) || 'HTTP ' + r.status;
+      const e = new Error(r.status === 401 ? 'GitHub rejected the token (401). Create a new one.' : r.status === 403 ? 'GitHub refused (403): this token cannot write to the repository. Create it with "Only select repositories" → this repository and Contents: Read and write. (' + m + ')' : r.status === 404 ? 'Not found (404). Check owner, repository and branch, and that the token has access to this repository.' : m);
+      e.status = r.status; throw e;
+    }
     return j;
   }
   const b64 = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => { const s = String(r.result); res(s.slice(s.indexOf(',') + 1)); }; r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
@@ -103,6 +111,9 @@
     const j = await api(c, R(c));
     if (!j.permissions || !j.permissions.push) throw new Error('This token can read ' + j.full_name + ' but cannot write to it. Give it Contents: Read and write.');
     await api(c, R(c) + '/branches/' + c.branch);
+    // "permissions" above describe your account, not the token: prove the token can write with a tiny unreferenced blob (changes nothing)
+    try { await api(c, R(c) + '/git/blobs', { method: 'POST', body: { content: 'fl-admin connection test', encoding: 'utf-8' } }); }
+    catch (e) { if (e.status === 403 || e.status === 404) throw new Error('This token can read ' + j.full_name + ' but cannot write to it. Create it with "Only select repositories" → ' + j.name + ' and Contents: Read and write.'); throw e; }
     return j;
   };
   A.ghPublish = async (c, up, rm, content, message, log) => {
@@ -125,6 +136,40 @@
     const nc = await api(c, R(c) + '/git/commits', { method: 'POST', body: { message, tree: nt.sha, parents: [head] } });
     await api(c, R(c) + '/git/refs/heads/' + c.branch, { method: 'PATCH', body: { sha: nc.sha } });
     return { url: 'https://github.com/' + c.owner + '/' + c.repo + '/commit/' + nc.sha };
+  };
+
+  // ---------- publishing from this PC: admin-local.py serves the panel and publishes with your own git login (no token) ----------
+  A.localPing = async () => {
+    if (!/^(127\.0\.0\.1|localhost)$/.test(location.hostname)) return null;
+    try { const r = await fetch('/__local/ping', { cache: 'no-store' }); const j = r.ok ? await r.json() : null; return j && j.ok ? j : null; } catch (e) { return null; }
+  };
+  async function lp(path, body, type) {
+    let r; try { r = await fetch(path, { method: 'POST', headers: { 'X-FL-Local': '1', 'Content-Type': type || 'application/json' }, body }); }
+    catch (e) { throw new Error('The local publisher is not running. Start the panel with admin-ac.bat.'); }
+    let j = null; try { j = await r.json(); } catch (e) {}
+    if (!r.ok || !j || !j.ok) throw new Error((j && j.error) || 'HTTP ' + r.status);
+    return j;
+  }
+  A.localPublish = async (up, rm, content, message, log) => {
+    log('Syncing with GitHub (git pull)'); await lp('/__local/begin', '{}');
+    for (let i = 0; i < up.length; i++) { const [p, blob] = up[i]; log(`Saving ${i + 1}/${up.length} · ${p.split('/').pop()} · ${A.mb(blob.size)}`); await lp('/__local/file?path=' + encodeURIComponent(p), blob, 'application/octet-stream'); }
+    log('Committing and pushing (git push)');
+    return lp('/__local/publish', JSON.stringify({ content, rm, message }));
+  };
+
+  // ---------- confirm a publish went live: poll the published content.js until it carries this publish's stamp ----------
+  A.siteURL = (c) => {
+    if (/\.github\.io$/i.test(location.hostname)) return location.origin + location.pathname.replace(/[^/]*$/, '');
+    if (!c || !c.owner || !c.repo) return '';
+    const sub = (c.path || '').replace(/^\/+|\/+$/g, '');
+    return (/\.github\.io$/i.test(c.repo) ? 'https://' + c.repo.toLowerCase() + '/' : 'https://' + c.owner.toLowerCase() + '.github.io/' + c.repo + '/') + (sub ? sub + '/' : '');
+  };
+  A.waitLive = async (site, stamp) => {
+    for (let i = 0; i < 48; i++) {
+      await new Promise((r) => setTimeout(r, 5000));
+      try { const t = await (await fetch(site + 'content.js?live=' + Date.now(), { cache: 'no-store' })).text(); const m = t.match(/"updated":\s*"([^"]+)"/); if (m && m[1] >= stamp) return true; } catch (e) {}
+    }
+    return false;
   };
 
   // ---------- export (any host) ----------

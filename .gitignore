@@ -2,3 +2,8 @@
 .claude/
 Thumbs.db
 desktop.ini
+
+# local publisher (runs on this PC only; not part of the site)
+admin-local.py
+admin-ac.bat
+__pycache__/
