@@ -69,13 +69,17 @@
   (function tick() { requestAnimationFrame(tick); if (visible) render(); })();
 
   function layout() {
-    arc.style.transform = `translateZ(${R - (few ? 40 : 170)}px)`;
+    // the arc's pivot sits R behind the front card. It is folded into each card's own transform instead of moving the
+    // arc container toward the viewer: a container pushed past the perspective point sits behind the camera, which
+    // broke 3D overflow maths (≈300px of phantom scroll under the contact section) and can glitch in some browsers
+    const pv = R - (few ? 40 : 170);
     for (let i = 0; i < N; i++) {
       const f = cards[i], a = i * step + rot, ab = Math.abs(a);
       const d = Math.max(0, Math.min(1, intro * 1.6 - Math.min(i, 8) * .07)), e = 1 - Math.pow(1 - d, 3);
       const op = Math.max(0, Math.min(1, (74 - ab) / 20)) * e;
-      f.style.transform = `translate(-50%,-50%) rotateY(${-a}deg) translateZ(${-R - (1 - e) * 700}px)`;
-      f.style.opacity = op; f.style.visibility = op <= .01 ? 'hidden' : 'visible';
+      f.style.transform = `translate(-50%,-50%) translateZ(${pv}px) rotateY(${-a}deg) translateZ(${-R - (1 - e) * 700}px)`;
+      // cards out of view leave the layout entirely (hidden cards would still count toward the page's overflow)
+      f.style.opacity = op; f.style.display = op <= .01 ? 'none' : '';
       f.classList.toggle('fo', ab < step / 2);
     }
   }

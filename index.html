@@ -453,7 +453,7 @@ a.dp-ci:hover span{text-decoration:underline}
 /* the footage arc's side cards sit far outside the viewport: clip them, or phones widen the layout viewport (fixed HUD + canvas go ~1500px wide) */
 #reel{overflow:hidden}
 @supports (overflow:clip){#reel{overflow:visible;overflow-x:clip}}
-@media(max-width:560px){.sec-h,.r-top .sec-h{font-stretch:120%;font-size:clamp(24px,7.6vw,34px)}.c-h{font-size:clamp(24px,9vw,34px)}}
+@media(max-width:560px){.sec-h,.r-top .sec-h{font-stretch:120%;font-size:clamp(24px,7.6vw,34px)}.c-h{font-size:clamp(24px,9vw,34px)}.cl{padding:13px 6px}.cl:hover{padding-left:12px}.cl .nm{font-size:20px}.c-p{font-size:16px}footer{margin-top:32px}}
 /* no WebGL: skip the 3D scene, keep the site */
 html.nogl{background:radial-gradient(120% 80% at 70% 0%,#141820,#060708 62%) fixed,var(--bg)}
 .nogl #gl,.nogl .hi-tip{display:none}
@@ -464,6 +464,15 @@ html.nogl{background:radial-gradient(120% 80% at 70% 0%,#141820,#060708 62%) fix
 @media (pointer:coarse){.card.fo .pl{transform:none;opacity:1}}
 /* a single clip has nothing to step through */
 #reel.solo .rail,#reel.solo #arcprev,#reel.solo #arcnext,#theater.solo #thprev,#theater.solo #thnext{display:none}
+/* the 3D arc never adds to the page's scroll size, whatever its cards do in depth */
+.arcv{overflow:hidden}
+@supports (overflow:clip){.arcv{overflow:clip}}
+/* contact: starts clear of the fixed HUD on every screen; its backdrop fades in instead of starting at a hard edge */
+#contact{padding-top:max(96px,12vh)}
+#contact::before{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 30vh);mask-image:linear-gradient(to bottom,transparent,#000 30vh)}
+/* past the hero, a soft backdrop behind the HUD so text scrolling underneath fades out instead of colliding with it */
+.hud::before{content:'';position:absolute;left:0;right:0;top:0;height:calc(100% + 36px);background:linear-gradient(to bottom,rgba(6,7,8,.9),rgba(6,7,8,.55) 55%,rgba(6,7,8,0));opacity:0;transition:opacity .5s;pointer-events:none;z-index:-1}
+body.scrolled .hud::before{opacity:1}
 </style>
 </head>
 <body class="locked">
@@ -643,10 +652,10 @@ html.nogl{background:radial-gradient(120% 80% at 70% 0%,#141820,#060708 62%) fix
 <script src="gl-space.js"></script>
 <script src="gl-avatar.js"></script>
 <script src="gl-main.js"></script>
-<script src="ui.js?v=5"></script>
+<script src="ui.js?v=8"></script>
 <script src="discord.js?v=5"></script>
 <script src="worlds.js?v=2"></script>
 <script src="comms.js?v=2"></script>
-<script src="gallery.js?v=2"></script>
+<script src="gallery.js?v=3"></script>
 </body>
 </html>

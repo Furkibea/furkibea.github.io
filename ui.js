@@ -106,15 +106,21 @@
   addEventListener('pointermove', (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
   document.addEventListener('mouseover', (e) => { const a = e.target.closest('a,button,[data-cur]'); cur.classList.toggle('big', !!a); const l = a && a.dataset.cur; cur.classList.toggle('lab', !!l); if (l) lb.textContent = l; });
   const ticks = $$('.depth .tick'), dmk = $('#dmk'), drd = $('#drd'), gate = $('#gate'), gst = $('#gatest'), gbar = $('#gatebar'), cue = $('#cue'), tip = $('#hitip');
+  const logsEl = $('#logs'), reelEl = $('#reel');
   FL.uiTick = loop; FL.skipBoot = finishBoot; (function raf() { requestAnimationFrame(raf); loop(); })();
   function loop() {
     cx += (mx - cx) * .2; cy += (my - cy) * .2; cur.style.transform = `translate(${cx}px,${cy}px)`;
     const S = FL.state || { z: 0, door: 0, hero: 1 };
     if (S.hoverAvatar) { cur.classList.add('big', 'lab'); lb.textContent = 'Say hi'; } else if (lb.textContent === 'Say hi') { cur.classList.remove('big', 'lab'); lb.textContent = ''; }
     const p = Math.min(1, -S.z / 50); dmk.style.top = p * 100 + '%'; ticks.forEach((tk) => tk.classList.toggle('on', Math.abs(parseFloat(tk.style.top) / 100 - p) < .05)); drd.textContent = 'Z ' + (S.z <= 0 ? '−' : '') + Math.abs(S.z).toFixed(2) + ' m';
-    const gv = Math.max(0, Math.min(1, 1 - Math.abs(-S.z - 36) / 6.5)) * (scrollY > innerHeight ? 1 : 0);
+    // the bulkhead caption only shows while the corridor between Transmissions and Footage fills the middle of the screen,
+    // so it never lands on section text (the pilot walks at a capped pace and can trail a fast scroll)
+    const logsB = logsEl && logsEl.offsetParent ? logsEl.getBoundingClientRect().bottom : -Infinity, reelT = reelEl && reelEl.offsetParent ? reelEl.getBoundingClientRect().top : Infinity;
+    const room = Math.max(0, Math.min(1, (innerHeight * .45 - logsB) / (innerHeight * .2), (reelT - innerHeight * .55) / (innerHeight * .2)));
+    const gv = Math.max(0, Math.min(1, 1 - Math.abs(-S.z - 36) / 6.5)) * (scrollY > innerHeight ? 1 : 0) * room;
     gate.style.opacity = gv; gbar.style.width = S.door * 100 + '%';
     const ok = S.door > .04; if (gate.classList.contains('ok') !== ok) { gate.classList.toggle('ok', ok); gst.textContent = ok ? 'Access granted' : 'Locked'; }
     cue.style.opacity = scrollY > 80 ? 0 : 1; tip.style.opacity = scrollY > 40 ? 0 : .9;
+    document.body.classList.toggle('scrolled', scrollY > innerHeight * .5);
   }
 })();
