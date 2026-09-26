@@ -2,7 +2,7 @@
 // Managed with the content panel (admin.html). Hand edits are replaced on the next publish.
 window.FL_CONTENT = {
   "version": 1,
-  "updated": "2026-09-26T00:38:43.666Z",
+  "updated": "2026-09-26T00:39:05.663Z",
   "profile": {
     "available": true,
     "links": {
