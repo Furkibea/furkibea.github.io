@@ -53,6 +53,8 @@ void main(){
  c+=emit*smoothstep(.02,-.3,nl)*1.6;
  float fr=pow(1.-max(dot(n,V),0.),uAtmP);
  c+=uAtm*fr*smoothstep(-.35,.5,nl)*uAtmI;
+ // earth-like worlds: a thin orange twilight band where day turns to night, as seen from orbit
+ if(uType>.5&&uType<1.5)c+=vec3(1.,.42,.16)*fr*smoothstep(.22,0.,abs(nl-.03))*.45*uAtmI;
  c+=col*.01;
  gl_FragColor=vec4(c,1.);
 }`;
@@ -102,13 +104,17 @@ void main(){vec3 d=normalize(vD);
 vec3 bn=normalize(vec3(.34,1.,.46));float a=dot(d,bn);
 float band=exp(-a*a*9.),core=exp(-a*a*40.);
 float n1=fbm3(d*3.2+1.),n2=fbm(d*9.+5.);
-vec3 col=mix(vec3(.035,.045,.08),vec3(.3,.24,.18),core)*band*(.15+1.1*n1*n1);
-col*=1.-smoothstep(.46,.72,n2)*core*.92;
-col+=vec3(.12,.04,.2)*pow(fbm3(d*2.2+9.),3.5)*1.1;
-col+=vec3(.01,.07,.13)*pow(fbm3(d*2.8+3.),3.5)*1.4;
-float tw=.7+.3*sin(uT*2.3+h31(floor(d*260.))*60.);
-float st=starL(d,260.,.955-band*.03,.17)*tw+starL(d,560.,.93-band*.05,.22)*.45+starL(d,110.,.993,.12)*3.;
-vec3 sc=mix(vec3(1.,.84,.68),vec3(.72,.84,1.),h31(floor(d*260.)+3.));
+// Milky Way: faint and warm at the core, cut by dark dust rifts; the rest of the sky stays black
+vec3 col=mix(vec3(.016,.02,.036),vec3(.15,.12,.095),core)*band*(.1+.95*n1*n1);
+col*=1.-smoothstep(.44,.7,n2)*core*.95;
+// nebulosity only as a whisper (a coloured haze everywhere reads as fake next to sunlit planets)
+col+=vec3(.04,.028,.055)*pow(fbm3(d*2.2+9.),4.)*.7;
+col+=vec3(.008,.022,.045)*pow(fbm3(d*2.8+3.),4.)*.7;
+float tw=.78+.22*sin(uT*2.3+h31(floor(d*300.))*60.);
+// star field: many faint stars, denser along the band, a few bright ones with real star colours
+float st=starL(d,300.,.95-band*.05,.16)*tw+starL(d,640.,.925-band*.08,.2)*.42+starL(d,120.,.993,.11)*3.4;
+float ct=h31(floor(d*300.)+3.);
+vec3 sc=ct<.2?vec3(1.,.72,.5):ct<.55?vec3(1.,.93,.84):vec3(.74,.84,1.);
 col+=st*sc;gl_FragColor=vec4(col,1.);}`,
     side: THREE.BackSide, depthWrite: false,
   });

@@ -78,7 +78,7 @@
 
   FL.state = { z: 0, door: 0, hero: 1, deck: 0, hoverAvatar: false, quality: 0 };
   const clock = new THREE.Clock();
-  let zCur = 0, camZ = 7.6, face = Math.PI, t = 0;
+  let zCur = 0, camZ = 7.6, face = Math.PI, t = 0, faceDir = Math.PI, stillT = 0;
   const cam = { v: null };
   const lookAt = new THREE.Vector3();
   let level = 0, zTgt = 0;
@@ -116,12 +116,17 @@
     for (let i = 0; i < cam.v.length; i++) cam.v[i] += (v[i] - cam.v[i]) * kc;
     const [, cx, cy, cd, ly, lz, fov] = cam.v;
     // avatar walks toward scroll target at a capped pace
-    const zT = v[0], dz = zT - zCur, maxStep = 5.2 * dt; zTgt = zT;
-    const step = Math.sign(dz) * Math.min(Math.abs(dz) * (1 - Math.exp(-dt * 2.6)), maxStep);
+    // walk over short scrolls, run to catch up after long ones (either way), so the pilot stays in step with the page
+    const zT = v[0], dz = zT - zCur, maxStep = (5.2 + Math.abs(dz) * 2.4) * dt; zTgt = zT;
+    const step = Math.sign(dz) * Math.min(Math.abs(dz) * (1 - Math.exp(-dt * 3.2)), maxStep);
     zCur += step;
     mouse.sx += (mouse.x - mouse.sx) * .06; mouse.sy += (mouse.y - mouse.sy) * .06;
     const hero = Math.max(0, Math.min(1, 1 - (-zT) / 1.2)) * (SY < innerHeight * .25 ? 1 : 0);
-    const faceT = (hero > .5 || dz > 2.5) ? Math.PI : 0;
+    // face the way the pilot actually moves (no moonwalking back on short scrolls up); standing still: toward the camera in
+    // the hero, and after a beat, back down the corridor elsewhere
+    const vz = step / Math.max(dt, 1e-3);
+    if (Math.abs(vz) > .8) { faceDir = vz > 0 ? Math.PI : 0; stillT = 0; } else { stillT += dt; if (hero > .5) faceDir = Math.PI; else if (stillT > 1.2) faceDir = 0; }
+    const faceT = faceDir;
     const pf = face; face += (faceT - face) * (1 - Math.exp(-dt * 3.4));
     const deck = Math.max(0, Math.min(1, (-zCur - 41) / 6));
     const back = Math.max(0, Math.min(1, (-zCur - 48.6) / 1.2));

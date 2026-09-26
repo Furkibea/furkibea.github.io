@@ -16,15 +16,16 @@
     }
     // horizon: cloud world filling the lower window
     const hp = V(0, -532, -330);
-    body(520, hp, FL.planetMat({ type: 1, c: ['#123a66', '#5d5a48', '#857a60', '#ffb46a'], atm: '#78aaff', atmI: 1.0, atmP: 2.6, freq: 7, cloud: .85, spin: .0025, seed: 3, sunI: 1.15 }), 0, 0, 256, 128);
+    // deep oceans, green and desert land, broken cloud cover, city lights on the night side
+    body(520, hp, FL.planetMat({ type: 1, c: ['#0a2a57', '#3a5230', '#a08b5c', '#ffb46a'], atm: '#6fa8ff', atmI: 1.05, atmP: 2.4, freq: 7, cloud: .6, spin: .0025, seed: 3, sunI: 1.0 }), 0, 0, 256, 128);
     atmo(520, hp, '#5d9cff', 1.5, 1.02);
-    // ringed ice giant
-    const gp = V(-104, 74, -420);
-    const giant = body(58, gp, FL.planetMat({ type: 0, c: ['#a9c9cc', '#5f8e9a', '#dde9e6', '#f4f7f3'], atm: '#bfe6ff', atmI: .7, atmP: 3.2, spin: .018, seed: 1.3, sunI: 1.6 }), .5, .36);
-    atmo(58, gp, '#9fd6ff', 1.1, 1.05);
-    const rm = FL.ringMat({ r: 58, inner: 58 * 1.32, outer: 58 * 2.3, c1: '#8f9aa0', c2: '#e6e2d8' });
+    // ringed gas giant, Saturn-like: smaller and farther so it sits in the sky instead of filling the window
+    const gp = V(-128, 84, -470), GR = 46;
+    const giant = body(GR, gp, FL.planetMat({ type: 0, c: ['#c9b48f', '#8d7757', '#e8dcc0', '#f3ecdc'], atm: '#f1e3c4', atmI: .45, atmP: 3.2, spin: .018, seed: 1.3, sunI: 1.5 }), .5, .36);
+    atmo(GR, gp, '#e8d9b8', .8, 1.05);
+    const rm = FL.ringMat({ r: GR, inner: GR * 1.28, outer: GR * 2.25, c1: '#8b7d68', c2: '#e6dcc6' });
     rm.uniforms.uSun.value.copy(SUN).sub(gp).normalize(); rm.uniforms.uPP.value.copy(gp);
-    const ring = new THREE.Mesh(new THREE.RingGeometry(58 * 1.3, 58 * 2.32, 256, 1), rm); ring.rotation.x = Math.PI / 2; giant.add(ring);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(GR * 1.26, GR * 2.27, 256, 1), rm); ring.rotation.x = Math.PI / 2; giant.add(ring);
     // moon
     body(8.5, V(64, 36, -250), FL.planetMat({ type: 2, c: ['#8f8c88', '#55524e', '#34322f'], atmI: 0, seed: 7, spin: .006, sunI: 1.8 }), 0, .1, 64, 48);
     // distant rust world
@@ -51,7 +52,7 @@
     const glowS = (c, k, x, z, s) => { const o = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunT, color: C(c).multiplyScalar(k), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); o.position.set(x, 0, z); o.scale.set(s, s, 1); sh.add(o); return o; };
     glowS('#9fd0ff', 5, -3.9, 0, 3.5);
     const nav = [glowS('#ff3b30', 6, -.6, 4.6, 1.2), glowS('#38ff7a', 6, -.6, -4.6, 1.2)];
-    sh.rotation.set(.12, -.25, .06); scene.add(sh);
+    sh.rotation.set(.12, -.25, .06); sh.scale.setScalar(.45); scene.add(sh);   // a distant craft, not a toy in front of the glass
     // orbital platform (truss + solar arrays) drifting off the right side
     const plat = new THREE.Group(); plat.position.set(92, 22, -190); plat.rotation.set(.3, -.6, .2); scene.add(plat);
     const solC = FL.cv(256, 128, (g) => { g.fillStyle = '#0b1a33'; g.fillRect(0, 0, 256, 128); g.strokeStyle = 'rgba(160,190,230,.5)'; g.lineWidth = 1; for (let x = 0; x <= 256; x += 16) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 128); g.stroke(); } for (let y = 0; y <= 128; y += 16) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke(); } });
@@ -65,14 +66,36 @@
     const beacon = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunT, color: C('#ff5b1f').multiplyScalar(8), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); beacon.scale.set(3, 3, 1); beacon.position.set(23.5, 0, 0); plat.add(beacon);
     // faint coloured nebula behind the planets
     const nebC = FL.cv(256, 256, (g) => { for (let i = 0; i < 60; i++) { const x = 40 + Math.random() * 176, y = 40 + Math.random() * 176, r = 20 + Math.random() * 60, rg = g.createRadialGradient(x, y, 0, x, y, r); rg.addColorStop(0, Math.random() < .5 ? 'rgba(90,120,255,.09)' : 'rgba(255,110,90,.06)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, 256, 256); } });
-    const neb = new THREE.Sprite(new THREE.SpriteMaterial({ map: FL.tx(nebC), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, opacity: .9 })); neb.position.set(40, 160, -1400); neb.scale.set(1500, 1000, 1); scene.add(neb);
+    const neb = new THREE.Sprite(new THREE.SpriteMaterial({ map: FL.tx(nebC), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, opacity: .28 })); neb.position.set(40, 160, -1400); neb.scale.set(1500, 1000, 1); scene.add(neb);
+
+    // asteroid debris between the station and the planets: tumbling, sunlit rocks with dark night sides give the view depth
+    const rockMat = FL.planetMat({ type: 2, c: ['#645e56', '#3b3733', '#221f1d'], atmI: 0, seed: 4.2, spin: 0, freq: 2.6, sunI: 1.9 });
+    rockMat.uniforms.uSun.value.copy(SUN).normalize(); mats.push(rockMat);
+    const rockGeo = (seed) => {
+      const g = new THREE.IcosahedronGeometry(1, 2), pa = g.attributes.position, v = new THREE.Vector3();
+      const n = (x, y, z) => Math.sin(x * 1.7 + seed) * Math.sin(y * 2.3 + seed * 1.3) * Math.sin(z * 1.9 + seed * .7) + .5 * Math.sin(x * 4.1 + y * 3.7 + z * 2.9 + seed);
+      for (let i = 0; i < pa.count; i++) { v.fromBufferAttribute(pa, i); v.multiplyScalar(1 + .3 * n(v.x, v.y, v.z)); v.y *= .76; pa.setXYZ(i, v.x, v.y, v.z); }
+      g.computeVertexNormals(); return g;
+    };
+    const rGeos = [1.1, 2.7, 4.3].map(rockGeo), rnd = ((s) => () => (s = (s * 16807) % 2147483647) / 2147483647)(9);
+    const rocks = [];
+    const rock = (x, y, z, s) => { const m = new THREE.Mesh(rGeos[rocks.length % 3], rockMat); m.position.set(x, y, z); m.scale.setScalar(s); m.rotation.set(rnd() * 6, rnd() * 6, rnd() * 6); m.userData = { o: m.position.clone(), w: new THREE.Vector3(rnd() - .5, rnd() - .5, rnd() - .5).multiplyScalar(.5), p: rnd() * 6 }; scene.add(m); rocks.push(m); };
+    // a loose field off to the right of the deck window (clear of the gas giant and the moon): two big distant rocks, a few small near ones
+    [[34, 26, -215, 4.2], [58, 6, -190, 3.1], [12, 14, -150, 1.4], [44, 34, -130, 1.1], [70, 20, -120, .9], [26, -2, -110, .8], [-30, -3, -125, 1.2], [-52, 30, -180, 1.8]].forEach(([x, y, z, s]) => rock(x, y, z, s));
+    for (let i = 0; i < 5; i++) rock(-45 - rnd() * 100, -4 + rnd() * 24, 4 - rnd() * 48, .5 + rnd() * 1.5);                                          // seen through the corridor viewport
+    // satellites: faint points of light crossing the sky over the planet, some with a blinking strobe
+    const satT = FL.tx(FL.cv(32, 32, (g) => { const r = g.createRadialGradient(16, 16, 0, 16, 16, 16); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.25, 'rgba(255,255,255,.55)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 32, 32); }));
+    const sats = [0, 1, 2, 3].map((i) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: satT, color: C('#ffffff').multiplyScalar(2), transparent: true, depthWrite: false, fog: false, blending: THREE.AdditiveBlending })); sp.scale.set(2.4, 2.4, 1); sp.userData = { a: rnd() * 6.28, v: (.006 + rnd() * .007) * (i % 2 ? 1 : -1), h: 70 + rnd() * 110, r: 640 + i * 70, strobe: i % 2 === 0 }; scene.add(sp); return sp; });
+
     return { sky, update(t, dt) {
       plat.rotation.x = .3 + t * .01; beacon.material.opacity = Math.sin(t * 2.5) > .3 ? 1 : .1;
       dt = dt || .016;
       mats.forEach((m) => { m.uniforms.uT.value = t; }); streak.material.opacity = .32 + Math.sin(t * .7) * .05;
       const a = t * .045; moonlet.position.set(gp.x + Math.cos(a) * 150, gp.y + Math.sin(a) * 38, gp.z + Math.sin(a) * 150); moonlet.material.uniforms.uSun.value.copy(SUN).sub(moonlet.position).normalize();
       mets.forEach((sp) => { const u = sp.userData; u.t += dt; const k = u.t / u.dur; if (k > 1) { sp.material.opacity = 0; if (u.t > u.dur + u.wait) spawnMet(sp); return; } if (u.a == null) return; const d = k * 160; sp.position.set(u.x + Math.cos(u.a) * d, u.y + Math.sin(u.a) * d, u.z); sp.material.opacity = Math.sin(k * Math.PI); });
-      const sk = (t * .012) % 1; sh.position.set(-110 + sk * 220, 14 + Math.sin(t * .2) * 1.5, -130); sh.visible = sk > .02 && sk < .98;
+      const sk = (t * .012) % 1; sh.position.set(-170 + sk * 340, 22 + Math.sin(t * .2) * 1.5, -240); sh.visible = sk > .02 && sk < .98;
+      rocks.forEach((m) => { const u = m.userData; m.rotation.x += u.w.x * dt; m.rotation.y += u.w.y * dt; m.rotation.z += u.w.z * dt; m.position.set(u.o.x + Math.sin(t * .05 + u.p) * 2, u.o.y + Math.sin(t * .07 + u.p) * 1.2, u.o.z); });
+      sats.forEach((s) => { const u = s.userData; u.a += u.v * dt; s.position.set(Math.cos(u.a) * u.r, u.h + Math.sin(u.a * 1.7) * 18, -260 - Math.abs(Math.sin(u.a)) * u.r * .8); s.material.opacity = u.strobe ? (Math.sin(t * 2.6 + u.r) > .92 ? 1 : .3) : .5; });
       nav.forEach((n, i) => { n.material.opacity = Math.sin(t * 5 + i * 3) > .6 ? 1 : .15; });
     } };
   };

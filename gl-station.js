@@ -114,11 +114,11 @@
     const ribGeo = new THREE.ExtrudeGeometry(ribShape, { depth: .6, bevelEnabled: true, bevelThickness: .05, bevelSize: .05, bevelSegments: 2, curveSegments: 1 }); ribGeo.translate(0, 0, -.3);
     const lip = shapeOf(offsetPoly(P, -.6)); lip.holes.push(shapeOf(offsetPoly(P, -.68), THREE.Path));
     const lipGeo = new THREE.ExtrudeGeometry(lip, { depth: .08, bevelEnabled: false }); lipGeo.translate(0, 0, -.04);
-    const R = rng(5); const guides = [];
+    const R = rng(5); const guides = [], ribLights = [];
     SEG.forEach(([za, zb], si) => {
       const len = za - zb, zc = (za + zb) / 2;
       add(ribGeo, M.hull, 0, 0, za);
-      if (si % 2 === 0) add(lipGeo, M.whiteDim, 0, 0, za);
+      { const lm = led('#dfe8f5', 1.2); add(lipGeo, lm, 0, 0, za); ribLights.push([lm, si]); }   // every rib glows; a pulse runs down the corridor
       edges.forEach((e, i) => {
         if (i === 0) return;
         const isWall = i === 2 || i === 6, s = i === 2 ? 1 : -1;
@@ -366,6 +366,112 @@ end)`.split('\n');
     const hr = new THREE.Mesh(new THREE.RingGeometry(.8, 1.15, 48, 1), new THREE.MeshBasicMaterial({ color: C('#7fd8ff').multiplyScalar(1.6), transparent: true, opacity: .35, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false })); hr.rotation.x = Math.PI / 2 - .4; holo.add(hr);
     const cone = new THREE.Mesh(new THREE.ConeGeometry(1.1, 1.3, 32, 1, true), new THREE.MeshBasicMaterial({ color: C('#7fd8ff'), transparent: true, opacity: .07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); cone.position.y = -.75; holo.add(cone);
     upd.push((t) => { holo.children[0].rotation.y = t * .6; hr.rotation.z = t * .3; holo.position.y = 2.6 + Math.sin(t * 1.4) * .06; hm.opacity = .35 + Math.sin(t * 9) * .04 + (Math.random() < .02 ? -.25 : 0); });
+
+    // ===== LIFE ON BOARD: light, machinery and small details =====
+    // rib light rings: a soft warm pulse travels from the crew deck toward the bulkhead
+    upd.push((t) => { ribLights.forEach(([m, si]) => { const k = Math.pow(.5 + .5 * Math.sin(t * 1.7 - si * .8), 10); m.color.setRGB(1 + k * 2.4, 1.05 + k * 1.3, 1.15 + k * .5); }); });
+
+    // ceiling lamps with soft light shafts (two crossed planes read as a volume from any angle); the first one spotlights the pilot
+    const shaftT = tx(cv(64, 256, (g) => { const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, 'rgba(255,244,228,1)'); gr.addColorStop(.55, 'rgba(255,244,228,.32)'); gr.addColorStop(1, 'rgba(255,244,228,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 256); const h = g.createLinearGradient(0, 0, 64, 0); h.addColorStop(0, 'rgba(0,0,0,1)'); h.addColorStop(.5, 'rgba(0,0,0,0)'); h.addColorStop(1, 'rgba(0,0,0,1)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = h; g.fillRect(0, 0, 64, 256); }));
+    shaftT.wrapS = shaftT.wrapT = THREE.ClampToEdgeWrapping;
+    const shaftM = new THREE.MeshBasicMaterial({ map: shaftT, transparent: true, opacity: .05, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false });
+    const lampM = led('#fff1de', 3.2);
+    [0, -11, -23, -35].forEach((z) => { bx(1.8, .08, .7, lampM, 0, 10.55, z); [0, Math.PI / 2].forEach((ry) => add(new THREE.PlaneGeometry(3.4, 10.4), shaftM, 0, 5.3, z, 0, ry)); });
+
+    // cable runs sagging between the ribs along the upper walls, merged into two meshes
+    const mergeGeos = (gs) => {
+      const pos = [], nor = [], idx = []; let off = 0;
+      gs.forEach((g) => { const p = g.attributes.position, n = g.attributes.normal, ix = g.index; for (let i = 0; i < p.count; i++) { pos.push(p.getX(i), p.getY(i), p.getZ(i)); nor.push(n.getX(i), n.getY(i), n.getZ(i)); } for (let i = 0; i < ix.count; i++) idx.push(ix.getX(i) + off); off += p.count; g.dispose(); });
+      const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); out.setIndex(idx); return out;
+    };
+    const cables = [[], []];
+    SEG.forEach(([za, zb], si) => [-1, 1].forEach((s) => [[5.55, .95, 0], [5.85, 1.25, 1]].forEach(([x, sag, alt]) => {
+      const a = new THREE.Vector3(s * x, 9.35, za - .35), b = new THREE.Vector3(s * x, 9.35, zb + .35), c = new THREE.Vector3(s * x, 9.35 - sag * 2, (za + zb) / 2);
+      cables[alt && si % 2 ? 1 : 0].push(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(a, c, b), 14, alt ? .035 : .05, 5, false));
+    })));
+    add(mergeGeos(cables[0]), new THREE.MeshStandardMaterial({ color: C('#141519'), roughness: .55, metalness: .2 }), 0, 0, 0);
+    add(mergeGeos(cables[1]), new THREE.MeshStandardMaterial({ color: C('#6b2a12'), roughness: .5, metalness: .1, emissive: C('#2a0c04') }), 0, 0, 0);
+
+    // soft round glow shared by the beacon halos and the steam puffs
+    const puffT = tx(cv(64, 64, (g) => { const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,.9)'); r.addColorStop(.4, 'rgba(255,255,255,.35)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); }));
+    // warning beacons over the bulkhead: a red sweep while it is sealed, steady green once it opens
+    const beamT = tx(cv(256, 64, (g) => { const gr = g.createLinearGradient(0, 0, 256, 0); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 64); const v = g.createLinearGradient(0, 0, 0, 64); v.addColorStop(0, 'rgba(0,0,0,1)'); v.addColorStop(.5, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,1)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = v; g.fillRect(0, 0, 256, 64); }));
+    beamT.wrapS = beamT.wrapT = THREE.ClampToEdgeWrapping;
+    const RED = C('#ff3b1f').multiplyScalar(5), GREEN = C('#3dff8a').multiplyScalar(4);
+    const beacons = [-1, 1].map((s) => {
+      const g = new THREE.Group(); g.position.set(s * 4.7, 8.75, DZ + 1.35); scene.add(g);
+      g.add(new THREE.Mesh(new THREE.CylinderGeometry(.24, .28, .22, 16), M.dark));
+      const dm = new THREE.MeshBasicMaterial({ color: RED.clone() }), dome = new THREE.Mesh(new THREE.SphereGeometry(.2, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), dm); dome.position.y = .1; g.add(dome);
+      const beam = new THREE.Group(); beam.position.y = .2; g.add(beam);
+      const bm = new THREE.MeshBasicMaterial({ map: beamT, color: C('#ff3b1f').multiplyScalar(1.2), transparent: true, opacity: .3, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false });
+      [0, Math.PI].forEach((r) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(2.4, .45), bm); p.position.x = Math.cos(r) * 1.3; p.rotation.y = r; beam.add(p); });
+      const gm = new THREE.SpriteMaterial({ map: puffT, color: RED.clone().multiplyScalar(.5), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+      const glow = new THREE.Sprite(gm); glow.position.y = .15; glow.scale.set(1.1, 1.1, 1); g.add(glow);
+      return { dm, gm, beam, s };
+    });
+    let doorOpen = 0;
+    upd.push((t) => { beacons.forEach((b) => { b.beam.visible = doorOpen < .6; if (b.beam.visible) b.beam.rotation.y = t * 3.2 * b.s; }); });
+
+    // steam venting from floor grilles
+    const vents = [[1, -6.5], [-1, -12.5], [1, -18.5], [-1, -30.5]].map(([s, z], vi) => {
+      bx(.9, .04, .6, M.dark, s * 6.3, .02, z);
+      const ps = [0, 1, 2, 3, 4].map(() => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffT, color: C('#c9d2dc'), transparent: true, opacity: 0, depthWrite: false })); scene.add(sp); return sp; });
+      return { s, z, ps, ph: vi * .37 };
+    });
+    upd.push((t) => { vents.forEach((v) => { const near = Math.abs(zNow - v.z) < 26; v.ps.forEach((sp, k) => { sp.visible = near; if (!near) return; const a = (t * .28 + k / 5 + v.ph) % 1; sp.position.set(v.s * (6.3 - a * .9), .25 + a * 2.6, v.z + Math.sin(t + k) * .15); sp.scale.setScalar(.5 + a * 2.2); sp.material.opacity = Math.sin(a * Math.PI) * .12; }); }); });
+
+    // a faulty junction box above the code wall that throws sparks every few seconds
+    bx(.3, .5, .4, M.dark, 7.78, 7.3, -24.6); const jled = led('#ff5b1f', 5), jBase = jled.color.clone(); bx(.04, .06, .06, jled, 7.62, 7.45, -24.5);
+    const SPN = 40, spPos = new Float32Array(SPN * 3), spVel = new Float32Array(SPN * 3), spLife = new Float32Array(SPN);
+    const spG = new THREE.BufferGeometry(); spG.setAttribute('position', new THREE.BufferAttribute(spPos, 3));
+    const sparkT = tx(cv(16, 16, (g) => { const r = g.createRadialGradient(8, 8, 0, 8, 8, 8); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.4, 'rgba(255,220,160,.8)'); r.addColorStop(1, 'rgba(255,140,40,0)'); g.fillStyle = r; g.fillRect(0, 0, 16, 16); }));
+    const sparks = new THREE.Points(spG, new THREE.PointsMaterial({ size: .09, map: sparkT, color: C('#ffd2a0').multiplyScalar(3), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    sparks.frustumCulled = false; scene.add(sparks); for (let i = 0; i < SPN; i++) spPos[i * 3 + 1] = -99;
+    let spNext = 2, spLast = 0;
+    upd.push((t) => {
+      const dt = Math.min(.05, Math.max(0, t - spLast)); spLast = t; const near = zNow < -10 && zNow > -38; sparks.visible = near; if (!near) return;
+      if (t > spNext) { spNext = t + 2.5 + Math.random() * 4; for (let i = 0; i < SPN; i++) { spPos.set([7.6, 7.3, -24.6], i * 3); spVel.set([-(.8 + Math.random() * 2.6), Math.random() * 2.8 - .4, (Math.random() - .5) * 2.4], i * 3); spLife[i] = .35 + Math.random() * .8; } jled.color.setRGB(12, 6, 3); }
+      else jled.color.lerp(jBase, .1);
+      for (let i = 0; i < SPN; i++) {
+        const j = i * 3; if (spLife[i] <= 0) { spPos[j + 1] = -99; continue; }
+        spLife[i] -= dt; spVel[j + 1] -= 9 * dt; spPos[j] += spVel[j] * dt; spPos[j + 1] += spVel[j + 1] * dt; spPos[j + 2] += spVel[j + 2] * dt;
+        if (spPos[j + 1] < .02) { spPos[j + 1] = .02; spVel[j + 1] *= -.35; spVel[j] *= .6; spVel[j + 2] *= .6; }
+      }
+      spG.attributes.position.needsUpdate = true;
+    });
+
+    // proximity radar on the crew deck wall
+    const radC = document.createElement('canvas'); radC.width = radC.height = 256; const radT = tx(radC);
+    bx(.12, 2.3, 2.3, M.dark, -7.92, 5.2, -4.8);
+    add(new THREE.PlaneGeometry(2.1, 2.1), new THREE.MeshBasicMaterial({ map: radT, color: C('#ffffff').multiplyScalar(1.4) }), -7.845, 5.2, -4.8, 0, Math.PI / 2);
+    const blips = [...Array(7)].map(() => [Math.random() * 6.28, .25 + Math.random() * .7]);
+    const drawRadar = (t) => {
+      const g = radC.getContext('2d'), c = 128, a = t * 1.6;
+      g.fillStyle = '#031008'; g.fillRect(0, 0, 256, 256); g.strokeStyle = 'rgba(98,227,154,.25)'; g.lineWidth = 1;
+      [40, 80, 118].forEach((r) => { g.beginPath(); g.arc(c, c, r, 0, 7); g.stroke(); }); g.beginPath(); g.moveTo(c - 120, c); g.lineTo(c + 120, c); g.moveTo(c, c - 120); g.lineTo(c, c + 120); g.stroke();
+      for (let k = 0; k < 24; k++) { const aa = a - k * .035; g.fillStyle = `rgba(98,227,154,${(1 - k / 24) * .22})`; g.beginPath(); g.moveTo(c, c); g.arc(c, c, 118, aa - .035, aa); g.closePath(); g.fill(); }
+      g.strokeStyle = 'rgba(160,255,200,.9)'; g.lineWidth = 2; g.beginPath(); g.moveTo(c, c); g.lineTo(c + Math.cos(a) * 118, c + Math.sin(a) * 118); g.stroke();
+      blips.forEach(([ba, br]) => { const d = ((a - ba) % 6.283 + 6.283) % 6.283, k = Math.max(0, 1 - d / 5); if (k > 0) { g.fillStyle = `rgba(160,255,200,${k})`; g.beginPath(); g.arc(c + Math.cos(ba) * br * 118, c + Math.sin(ba) * br * 118, 3.2, 0, 7); g.fill(); } });
+      g.fillStyle = 'rgba(160,255,200,.7)'; g.font = '600 13px "IBM Plex Mono",monospace'; g.fillText('PROX SCAN', 12, 22); g.textAlign = 'right'; g.fillText(blips.length + ' CONTACTS', 244, 244); g.textAlign = 'left';
+      radT.needsUpdate = true;
+    };
+    let radLast = -1; upd.push((t) => { if (zNow > -16 && t - radLast > .066) { radLast = t; drawRadar(t); } }); drawRadar(0);
+
+    // observation deck: a glowing rim around the window and a star map projected on the floor around the pilot
+    // (the opening's bevel narrows it by ~.38 at the front, so the rim sits just inside that visible edge, in front of the wall)
+    const rim = roundRect(-10.84, 1.66, 10.84, 10.94, 2.24); rim.holes.push(roundRect(-10.72, 1.78, 10.72, 10.82, 2.12, THREE.Path));
+    add(new THREE.ShapeGeometry(rim, 24), new THREE.MeshBasicMaterial({ color: C('#bfe6ff').multiplyScalar(1.6) }), 0, 0, WZ + .42);
+    const mapC = cv(512, 512, (g) => {
+      const c = 256, R2 = rng(21); g.translate(c, c); g.strokeStyle = 'rgba(160,220,255,.8)';
+      [250, 200, 120, 60].forEach((r, i) => { g.lineWidth = i ? 1 : 2; g.beginPath(); g.arc(0, 0, r, 0, 7); g.stroke(); });
+      for (let i = 0; i < 72; i++) { const a = i / 72 * Math.PI * 2, l = i % 6 ? 6 : 16; g.beginPath(); g.moveTo(Math.cos(a) * 250, Math.sin(a) * 250); g.lineTo(Math.cos(a) * (250 - l), Math.sin(a) * (250 - l)); g.stroke(); }
+      const st = [...Array(26)].map(() => { const a = R2() * Math.PI * 2, r = 30 + R2() * 190; return [Math.cos(a) * r, Math.sin(a) * r]; });
+      g.lineWidth = 1; g.strokeStyle = 'rgba(160,220,255,.45)'; for (let i = 0; i < 18; i++) { const p = st[i], q = st[(i * 7 + 3) % st.length]; if (Math.hypot(p[0] - q[0], p[1] - q[1]) < 150) { g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); } }
+      st.forEach(([x, y], i) => { g.fillStyle = i % 5 ? 'rgba(200,235,255,.9)' : 'rgba(255,140,90,1)'; g.beginPath(); g.arc(x, y, i % 5 ? 2.2 : 3.4, 0, 7); g.fill(); });
+    });
+    const smap = add(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ map: tx(mapC), color: C('#7fd8ff').multiplyScalar(.9), transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false }), 0, .025, -50, -Math.PI / 2);
+    upd.push((t) => { if (zNow < -38) smap.rotation.z = t * .02; });
+
     return {
       reflector, floorStd, padMat,
       setDoor(o) {
@@ -373,6 +479,7 @@ end)`.split('\n');
         leafL.position.x = -1.725 - e * 3.7; leafR.position.x = 1.725 + e * 3.7;
         const c = new THREE.Color().setRGB(1, .23 + e * .72, .12 + e * .85).multiplyScalar(4);
         lampMat.color.copy(c); doorLight.color.setRGB(1, .3 + e * .6, .15 + e * .8); doorLight.intensity = 1.4 + e * .6;
+        doorOpen = e; beacons.forEach((b) => { b.dm.color.copy(e > .6 ? GREEN : RED); b.gm.color.copy(b.dm.color).multiplyScalar(.5); });
       },
       update(t, z) { if (z != null) zNow = z; upd.forEach((f) => f(t)); },
     };

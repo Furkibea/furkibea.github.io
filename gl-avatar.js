@@ -82,7 +82,9 @@
       const { dt, t } = st, k = Math.min(1, dt * 7);
       const spd = st.dist / Math.max(dt, 1e-3);
       amp = d(amp, Math.min(spd / 3.4, 1), Math.min(1, dt * 5));
-      phase += st.dist * (Math.PI * 2 / 2.7) + st.turn * 1.4;
+      // legs cycle at most at a running cadence, however fast the pilot is catching up with the page; lean into a run
+      phase += Math.min(st.dist, dt * 7.5) * (Math.PI * 2 / 2.7) + st.turn * 1.4;
+      const run = Math.max(0, Math.min(1, (spd - 5) / 9));
       const A = Math.max(amp, Math.min(Math.abs(st.turn) / Math.max(dt, 1e-3) / 2.5, .6)), s = Math.sin(phase), c = Math.cos(phase), I = 1 - A;
       J.hips.position.y = J.hips.userData.y0 + ((.5 + .5 * Math.cos(2 * phase)) * .075 - .05) * A / (api.height / 5.36);
       J.hips.rotation.set(0, s * .1 * A, s * .035 * A + Math.sin(t * .6) * .012 * I);
@@ -90,13 +92,13 @@
       J.knA.rotation.x = -Math.max(0, c) * .8 * A; J.knB.rotation.x = -Math.max(0, -c) * .8 * A;
       J.skirt.rotation.x = -Math.sin(2 * phase) * .03 * A;
       const breathe = Math.sin(t * 1.7) * .014;
-      J.torso.rotation.x = d(J.torso.rotation.x, -.06 * A + breathe, k);
+      J.torso.rotation.x = d(J.torso.rotation.x, -.06 * A - .14 * run + breathe, k);
       J.torso.rotation.y = d(J.torso.rotation.y, -s * .15 * A + st.lookX * .28 * st.hero + st.back * .32, k);
       const lookY = st.lookX * .75 * st.hero + Math.sin(t * .31) * .18 * I * (1 - st.hero) * (1 - st.back) + st.back * 1.0;
       const lookX = -st.lookY * .45 * st.hero + st.deck * .22 * (1 - st.back) - .04 * A;
       J.neck.rotation.y = d(J.neck.rotation.y, lookY - J.torso.rotation.y * .6 - J.hips.rotation.y, k);
       J.neck.rotation.x = d(J.neck.rotation.x, lookX, k);
-      J.shA.rotation.x = -s * .5 * A + breathe; J.shB.rotation.x = s * .5 * A + breathe;
+      J.shA.rotation.x = -s * (.5 + .3 * run) * A + breathe; J.shB.rotation.x = s * (.5 + .3 * run) * A + breathe;
       J.shA.rotation.z = .07 + Math.sin(t * 1.7) * .01; J.shB.rotation.z = -.07 - Math.sin(t * 1.7) * .01;
       J.elA.rotation.x = (.12 + .32 * Math.max(0, -s)) * A + .06; J.elB.rotation.x = (.12 + .32 * Math.max(0, s)) * A + .06;
       J.elA.rotation.z = 0;

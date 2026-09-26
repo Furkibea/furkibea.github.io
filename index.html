@@ -198,32 +198,22 @@ main{position:relative;z-index:10}
 .lg-strip .yt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}.lg-strip .yt::after{content:'';border-left:12px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent}
 @media(max-width:900px){.lg-body{grid-template-columns:1fr;margin-top:3vh}.lg-media{order:-1}.lg-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.lg-stats .st:not(.big)+.st:not(.big){border-left:0;padding-left:0}.lg-stats .st:nth-child(3){border-left:1px solid var(--line);padding-left:14px}.lg-stats .st.big b{font-size:clamp(52px,15vw,84px)}.lg-desc{font-size:16px}.lg-view .cb{display:none}}
 
-/* transmissions: 3D card stack */
-.tx-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,280px);gap:clamp(24px,5vw,96px);align-items:center;margin-top:3vh}
-.tx-view{perspective:1500px;perspective-origin:20% 0%;padding-top:110px;touch-action:pan-y}
-.tx-tilt{position:relative;height:clamp(360px,34vw,420px);max-width:760px;transform-style:preserve-3d;will-change:transform}
-.tx-card{position:absolute;inset:0;display:flex;flex-direction:column;gap:14px;padding:clamp(16px,2vw,24px);background:linear-gradient(165deg,rgba(236,238,240,.07),transparent 40%),#0a0b0d;border:1px solid rgba(236,238,240,.16);box-shadow:0 40px 80px -30px rgba(0,0,0,.8);transition:transform 1s var(--ease),opacity .7s var(--ease),border-color .5s;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:pan-y}
-.tx-card.front{pointer-events:auto;border-color:rgba(255,91,31,.55)}.tx-card>*{transition:opacity .5s}.tx-card:not(.front)>*{opacity:0}
-.tx-card::before{content:'';position:absolute;left:-1px;top:-1px;width:0;height:2px;background:var(--acc);transition:width .9s var(--ease) .2s}
-.tx-card.front::before{width:64px}
-.tx-tilt.pre .tx-card{transform:translate3d(0,60px,-700px)!important;opacity:0!important}
-.tc-top{display:flex;gap:16px;align-items:center;color:var(--mute);flex-wrap:wrap}.tc-top .sig{margin-left:auto}
-.tc-wave{display:block;width:100%;height:84px;border:1px solid var(--line);background:#07080a}
-.tc-msg{flex:1;font-size:clamp(22px,2.3vw,34px);font-weight:600;font-stretch:112%;line-height:1.18;text-wrap:pretty;overflow:hidden}
-.tc-media{display:block;width:100%;max-height:140px;object-fit:cover;border:1px solid var(--line)}
-.tc-foot{display:flex;justify-content:space-between;color:var(--dim)}
-.tx-card.front .tc-foot span:last-child{color:var(--mute)}
-.tx-side{display:flex;flex-direction:column;gap:22px}
-.tx-count{display:flex;align-items:baseline;gap:10px;overflow:hidden;padding-bottom:4px}
-.tx-count .disp{font-size:clamp(64px,7vw,116px);line-height:.9;display:inline-block}
-.tx-count .disp.roll{animation:roll .6s var(--ease)}
-@keyframes roll{from{transform:translateY(60%);opacity:0}to{transform:none;opacity:1}}
-.tx-idx{list-style:none;border-top:1px solid var(--line)}
-.tx-idx button{all:unset;box-sizing:border-box;position:relative;display:flex;justify-content:space-between;gap:12px;width:100%;padding:12px 2px;border-bottom:1px solid var(--line);color:var(--mute);transition:color .3s}
-.tx-idx button:hover,.tx-idx button.on{color:var(--ink)}.tx-idx button.on .id{color:var(--acc)}
-.tx-idx .pr{position:absolute;left:0;bottom:-1px;height:1px;width:0;background:var(--acc)}
-.tx-ctl{display:flex;gap:8px;align-items:center}.tx-ctl .mono{margin-left:6px}
-@media(max-width:1000px){.tx-body{grid-template-columns:1fr}.tx-view{padding-top:96px}.tx-side{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between}.tx-idx{display:none}}
+/* transmissions: field log feed, newest first */
+.fx{list-style:none;position:relative;margin-top:4.5vh;max-width:760px}
+.fx::before{content:'';position:absolute;left:5px;top:14px;bottom:14px;width:1px;background:linear-gradient(to bottom,var(--acc),rgba(255,91,31,.25) 22%,var(--line) 40%,var(--line) 85%,transparent)}
+.fx-it{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:clamp(18px,3vw,40px);row-gap:12px;align-items:start;padding:20px 0 22px 36px;border-bottom:1px solid var(--line);opacity:0;transform:translateY(16px);transition:opacity .9s var(--ease),transform 1s var(--ease)}
+.fx-it.in{opacity:1;transform:none}
+.fx-it::before{content:'';position:absolute;left:1px;top:26px;width:9px;height:9px;background:var(--bg);border:1px solid rgba(236,238,240,.45);transform:rotate(45deg)}
+.fx-it.latest::before{background:var(--acc);border-color:var(--acc);box-shadow:0 0 14px rgba(255,91,31,.8);animation:blink 1.4s steps(1) infinite}
+.fx-meta{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;color:var(--mute)}
+.fx-meta .id{color:var(--acc)}
+.fx-new{padding:3px 7px;border:1px solid rgba(255,91,31,.55);color:var(--acc);font-size:9px}
+.fx-msg{grid-column:1;font-size:clamp(18px,1.55vw,23px);font-weight:600;font-stretch:112%;line-height:1.32;max-width:48ch;text-wrap:pretty}
+.fx-it.latest .fx-msg{font-size:clamp(22px,2.1vw,32px);line-height:1.18;max-width:30ch}
+.fx-wave{grid-column:1/-1;display:block;width:100%;height:64px;border:1px solid var(--line);background:rgba(7,8,10,.55)}
+.fx-media{grid-column:2;grid-row:2/span 2;width:clamp(150px,19vw,260px);aspect-ratio:16/9;object-fit:cover;border:1px solid var(--line);background:#000}
+.fx-it.latest .fx-media{grid-row:3}
+@media(max-width:700px){.fx-it{grid-template-columns:minmax(0,1fr);padding-left:28px}.fx-media{grid-column:1;grid-row:auto;width:100%}.fx-it.latest .fx-msg{max-width:none}}
 
 /* gate */
 #gate{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;text-align:center;pointer-events:none;opacity:0;display:flex;flex-direction:column;align-items:center;gap:16px}
@@ -587,14 +577,7 @@ body.scrolled .hud::before{opacity:1}
     <div class="scrim"></div>
     <div class="wrap">
       <div class="x-head"><div><span class="kicker mono"><span class="n">03</span><span>Comms — field logs</span><span class="ln"></span></span><h2 class="sec-h disp scr">Transmissions</h2></div><div class="x-sum mono"><span><b id="rxcount">06</b> received</span><span>Last <b id="rxlast">—</b></span></div></div>
-      <div class="tx-body">
-        <div class="tx-view" id="txview" data-cur="Swipe"><div class="tx-tilt pre" id="txs"></div></div>
-        <aside class="tx-side">
-          <div class="tx-count"><span class="disp" id="txn">01</span><span class="mono mute" id="txtot">/ 06</span></div>
-          <ol class="tx-idx mono" id="txidx"></ol>
-          <div class="tx-ctl"><button class="cb" id="txprev" aria-label="Previous transmission">←</button><button class="cb" id="txnext" aria-label="Next transmission">→</button><span class="mono mute">Auto · 7s</span></div>
-        </aside>
-      </div>
+      <ol class="fx" id="fxlist" aria-label="Field logs"></ol>
     </div>
     <i data-cam="-31,-2.6,4.0,10.5,2.6,8,44"></i>
   </section>
@@ -647,15 +630,15 @@ body.scrolled .hud::before{opacity:1}
 <script src="vendor/three/UnrealBloomPass.js"></script>
 <script src="vendor/three/Reflector.js"></script>
 <script src="site-data.js?v=3"></script>
-<script src="gl-shaders.js"></script>
-<script src="gl-station.js"></script>
-<script src="gl-space.js"></script>
-<script src="gl-avatar.js"></script>
-<script src="gl-main.js"></script>
+<script src="gl-shaders.js?v=3"></script>
+<script src="gl-station.js?v=3"></script>
+<script src="gl-space.js?v=3"></script>
+<script src="gl-avatar.js?v=3"></script>
+<script src="gl-main.js?v=3"></script>
 <script src="ui.js?v=8"></script>
 <script src="discord.js?v=5"></script>
 <script src="worlds.js?v=2"></script>
-<script src="comms.js?v=2"></script>
+<script src="comms.js?v=4"></script>
 <script src="gallery.js?v=3"></script>
 </body>
 </html>
