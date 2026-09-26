@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Signal lost — FurkanLua</title>
+<meta name="theme-color" content="#060708">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23060708'/%3E%3Cpath d='M12 12h22v8H20v8h12v8H20v16h-8z' fill='%23eceef0'/%3E%3Cpath d='M38 12h8v32h8v8H38z' fill='%23ff5b1f'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,300..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#eceef0;--mute:#a3a7ad;--acc:#ff5b1f;--bg:#060708;--snap:cubic-bezier(.7,0,.2,1)}
+html{background:radial-gradient(120% 80% at 70% 0%,#141820,#060708 62%) fixed,var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;display:flex;flex-direction:column;justify-content:space-between;gap:40px;padding:28px clamp(18px,6vw,120px);font-family:'Anybody',sans-serif}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+h1{font-weight:800;font-stretch:150%;text-transform:uppercase;line-height:.86;letter-spacing:-.01em;font-size:clamp(88px,19vw,300px)}
+h1 span{color:var(--acc)}
+p{max-width:38ch;color:var(--mute);font-size:17px;line-height:1.5;margin:22px 0 30px}
+.btn{position:relative;display:inline-flex;gap:14px;padding:17px 24px;background:var(--ink);color:#050506;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;overflow:hidden;isolation:isolate}
+.btn::before{content:'';position:absolute;inset:0;background:var(--acc);transform:translateY(101%);transition:transform .45s var(--snap);z-index:-1}
+.btn:hover::before,.btn:focus-visible::before{transform:none}
+</style>
+</head>
+<body>
+<span class="mono">FurkanLua station · Signal lost</span>
+<main>
+  <h1>4<span>0</span>4</h1>
+  <p>This sector of the station doesn't exist. The page may have moved, or the link is wrong.</p>
+  <a class="btn" href="/">Back to deck 01 →</a>
+</main>
+<span class="mono">Error 404 · No carrier</span>
+</body>
+</html>

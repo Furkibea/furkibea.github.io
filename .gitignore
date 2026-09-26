@@ -1,0 +1,4 @@
+# local tooling — not part of the site
+.claude/
+Thumbs.db
+desktop.ini
