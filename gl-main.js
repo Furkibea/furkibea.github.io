@@ -17,6 +17,7 @@
   FL.progress = 0;
   if (station.reflector) { const ob = station.reflector.onBeforeRender; station.reflector.onBeforeRender = function (r, s, c) { space.sky.visible = false; ob.call(this, r, s, c); space.sky.visible = true; }; }
   const avatar = FL.loadAvatar(scene, (p) => { FL.progress = p; });
+  const props = FL.buildProps ? FL.buildProps(scene) : null;   // bridge, suits, equipment (gl-props.js)
   FL.avatar = avatar;
 
   scene.add(new THREE.HemisphereLight(C('#9fb0c4'), C('#0a0b0e'), .55));
@@ -172,7 +173,7 @@
     // hover avatar (hero only)
     FL.state.hoverAvatar = hero > .5 && mouse.px >= 0 && avatarHit(mouse.px, mouse.py);
 
-    station.update(t, zCur); space.update(t, dt);
+    station.update(t, zCur); if (props) props.update(t, zCur); space.update(t, dt);
     FL.cin = (FL.cin || 0) + (((FL.cinema || 0) ? 1 : 0) - (FL.cin || 0)) * (1 - Math.exp(-dt * 2.5));
     FU.uExpo.value = 1 - FL.cin * .5; fill.intensity = 1.6 * (1 - FL.cin * .8);
     FU.uT.value = t;

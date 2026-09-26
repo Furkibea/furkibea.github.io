@@ -15,6 +15,7 @@
   const media = (m) => !m ? '' : /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(m) ? `<video class="fx-media" src="${esc(m)}" muted loop playsinline preload="metadata"></video>` : `<img class="fx-media" src="${esc(m)}" alt="" loading="lazy" decoding="async">`;
   list.innerHTML = T.map((l, i) => `<li class="fx-it${i ? '' : ' latest'}"><div class="fx-meta mono"><span class="id">${tx(i)}</span><span>${esc(fd(l.date))}</span>${i ? '' : '<span class="fx-new">Latest</span>'}</div>${i ? '' : '<canvas class="fx-wave" aria-hidden="true"></canvas>'}<p class="fx-msg">${esc(l.text)}</p>${media(l.media)}</li>`).join('');
   const items = [...list.children];
+  window.FL.commsLines = T.map((l) => l.text);   // the bridge's comms screen reads the same log
 
   // decode left to right; letters not reached yet are already in place but transparent, so lines never reflow
   function decode(el, text) {

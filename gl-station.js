@@ -307,13 +307,7 @@ end)`.split('\n');
     add(wGeo, new THREE.MeshStandardMaterial({ map: tx(wallCanv[2], 3, 1.6), color: C('#a9afb7'), roughness: .42, metalness: .55 }), 0, 0, WZ);
     bx(20, .05, .1, M.white, 0, 1.05, WZ + .45);
     add(new THREE.PlaneGeometry(23, 10.4), new THREE.MeshBasicMaterial({ color: C('#a8c6e8'), transparent: true, opacity: .035, blending: THREE.AdditiveBlending, depthWrite: false }), 0, 6.3, WZ - .6);
-    // consoles
-    const conC = cv(512, 200, (g) => { g.fillStyle = '#04070b'; g.fillRect(0, 0, 512, 200); g.strokeStyle = '#7fd8ff'; g.lineWidth = 1.5; g.strokeRect(12, 12, 488, 176); for (let i = 0; i < 12; i++) { g.fillStyle = i % 5 === 0 ? '#ff5b1f' : 'rgba(127,216,255,.7)'; g.fillRect(28 + i * 38, 150 - (20 + ((i * 37) % 90)), 22, 20 + ((i * 37) % 90)); } g.fillStyle = '#e8eef4'; g.font = '600 16px monospace'; g.fillText('NAV · ORBITAL TRACK', 28, 40); });
-    [-1, 1].forEach((s) => {
-      bx(6.4, 1.05, 1.8, M.hull, s * 7.2, .52, WZ + 2.2);
-      const top = bx(6.2, .12, 1.8, M.dark, s * 7.2, 1.1, WZ + 2.2); top.rotation.x = .22;
-      const sc = add(new THREE.PlaneGeometry(3.4, 1.3), new THREE.MeshBasicMaterial({ map: tx(conC), color: C('#ffffff').multiplyScalar(1.3) }), s * 7.2, 1.18, WZ + 2.2, -Math.PI / 2 + .22);
-    });
+    // (the bridge: helm, stations, seats and screens live in gl-props.js)
     // god rays through the glass
     const rayC = cv(64, 256, (g) => { const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, 'rgba(255,240,220,.9)'); gr.addColorStop(1, 'rgba(255,240,220,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 256); const h = g.createLinearGradient(0, 0, 64, 0); h.addColorStop(0, 'rgba(0,0,0,1)'); h.addColorStop(.5, 'rgba(0,0,0,0)'); h.addColorStop(1, 'rgba(0,0,0,1)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = h; g.fillRect(0, 0, 64, 256); });
     const rayM = new THREE.MeshBasicMaterial({ map: tx(rayC), transparent: true, opacity: .06, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
@@ -359,13 +353,6 @@ end)`.split('\n');
 
     // chase lights on the floor guides — a pulse that runs toward the door
     upd.push((t) => { guides.forEach(([m, si]) => { const k = Math.pow(.5 + .5 * Math.sin(t * 3.2 - si * 1.1), 6); m.color.setRGB(.75 + k * 1.7, .8 + k * 1.8, .9 + k * 2.0); }); });
-    // hologram over the right console: the ice giant in miniature
-    const holo = new THREE.Group(); holo.position.set(7.2, 2.6, WZ + 2.4); scene.add(holo);
-    const hm = new THREE.MeshBasicMaterial({ color: C('#7fd8ff').multiplyScalar(.9), wireframe: true, transparent: true, opacity: .4, blending: THREE.AdditiveBlending, depthWrite: false });
-    holo.add(new THREE.Mesh(new THREE.SphereGeometry(.55, 14, 9), hm));
-    const hr = new THREE.Mesh(new THREE.RingGeometry(.8, 1.15, 48, 1), new THREE.MeshBasicMaterial({ color: C('#7fd8ff').multiplyScalar(1.6), transparent: true, opacity: .35, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false })); hr.rotation.x = Math.PI / 2 - .4; holo.add(hr);
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(1.1, 1.3, 32, 1, true), new THREE.MeshBasicMaterial({ color: C('#7fd8ff'), transparent: true, opacity: .07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); cone.position.y = -.75; holo.add(cone);
-    upd.push((t) => { holo.children[0].rotation.y = t * .6; hr.rotation.z = t * .3; holo.position.y = 2.6 + Math.sin(t * 1.4) * .06; hm.opacity = .35 + Math.sin(t * 9) * .04 + (Math.random() < .02 ? -.25 : 0); });
 
     // ===== LIFE ON BOARD: light, machinery and small details =====
     // rib light rings: a soft warm pulse travels from the crew deck toward the bulkhead

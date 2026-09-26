@@ -43,7 +43,7 @@
     const spawnMet = (sp) => { const a = Math.PI + .35 + Math.random() * .5; sp.userData = { t: 0, dur: .7 + Math.random() * .6, wait: 4 + Math.random() * 7, a, x: -120 + Math.random() * 280, y: 70 + Math.random() * 90, z: -380 - Math.random() * 200 }; sp.material.rotation = a; sp.scale.set(30 + Math.random() * 40, 1.4, 1); };
     // shuttle drifting past the window
     const sh = new THREE.Group();
-    const hullM = new THREE.MeshStandardMaterial({ color: C('#c9ccd1'), roughness: .5, metalness: .6 }), darkM = new THREE.MeshStandardMaterial({ color: C('#2a2d33'), roughness: .6, metalness: .5 });
+    const hullM = new THREE.MeshStandardMaterial({ fog: false, color: C('#c9ccd1'), roughness: .5, metalness: .6 }), darkM = new THREE.MeshStandardMaterial({ fog: false, color: C('#2a2d33'), roughness: .6, metalness: .5 });
     const part = (g, m, x, y, z, rz) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); o.rotation.z = rz || 0; sh.add(o); return o; };
     part(new THREE.CylinderGeometry(1.1, 1.3, 7, 12), hullM, 0, 0, 0, Math.PI / 2);
     part(new THREE.ConeGeometry(1.1, 2, 12), hullM, 4.5, 0, 0, -Math.PI / 2);
@@ -56,14 +56,30 @@
     // orbital platform (truss + solar arrays) drifting off the right side
     const plat = new THREE.Group(); plat.position.set(92, 22, -190); plat.rotation.set(.3, -.6, .2); scene.add(plat);
     const solC = FL.cv(256, 128, (g) => { g.fillStyle = '#0b1a33'; g.fillRect(0, 0, 256, 128); g.strokeStyle = 'rgba(160,190,230,.5)'; g.lineWidth = 1; for (let x = 0; x <= 256; x += 16) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 128); g.stroke(); } for (let y = 0; y <= 128; y += 16) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke(); } });
-    const solM = new THREE.MeshStandardMaterial({ map: FL.tx(solC), color: C('#9fb8e0'), roughness: .25, metalness: .8, side: THREE.DoubleSide });
-    const trM = new THREE.MeshStandardMaterial({ color: C('#b8bcc4'), roughness: .45, metalness: .7 });
+    const solM = new THREE.MeshStandardMaterial({ fog: false, map: FL.tx(solC), color: C('#9fb8e0'), roughness: .25, metalness: .8, side: THREE.DoubleSide });
+    const trM = new THREE.MeshStandardMaterial({ fog: false, color: C('#b8bcc4'), roughness: .45, metalness: .7 });
     const pp = (g, m, x, y, z) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); plat.add(o); return o; };
     pp(new THREE.BoxGeometry(46, .5, .5), trM, 0, 0, 0);
     for (let i = -2; i <= 2; i++) { if (!i) continue; [-1, 1].forEach((s) => pp(new THREE.BoxGeometry(5, .06, 11), solM, i * 9, 0, s * 6.2)); pp(new THREE.BoxGeometry(.3, .3, 24), trM, i * 9, 0, 0); }
     const core = pp(new THREE.CylinderGeometry(2.2, 2.2, 7, 16), trM, 0, 0, 0); core.rotation.z = Math.PI / 2;
     pp(new THREE.TorusGeometry(4.2, .45, 10, 40), trM, 0, 0, 0).rotation.y = Math.PI / 2;
+    // pressurised modules along the core and radiator panels, like a real orbital lab
+    const modM = new THREE.MeshStandardMaterial({ fog: false, color: C('#dfe3e8'), roughness: .65, metalness: .2, envMapIntensity: .3 });
+    [[-7.5, 0, 0, 1.7, 7], [7, 0, 0, 1.5, 6], [0, 0, 5.5, 1.6, 6.5]].forEach(([x, y, z, r, l], i) => { const m = pp(new THREE.CylinderGeometry(r, r, l, 16), modM, x, y, z); if (i < 2) m.rotation.z = Math.PI / 2; else m.rotation.x = Math.PI / 2; });
+    [-1, 1].forEach((s) => pp(new THREE.BoxGeometry(6, .08, 3), modM, s * 3.5, 2.4, -2.2));
     const beacon = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunT, color: C('#ff5b1f').multiplyScalar(8), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); beacon.scale.set(3, 3, 1); beacon.position.set(23.5, 0, 0); plat.add(beacon);
+    // a rotating ring habitat high in the window: hub with a docking spire, four spokes, a band of lit windows
+    const ringG = new THREE.Group(); ringG.position.set(44, 170, -640); ringG.rotation.set(1.05, .2, .35); scene.add(ringG);
+    const spin = new THREE.Group(); ringG.add(spin);
+    const bandA = FL.cv(1024, 64, (g) => { g.fillStyle = '#8f959d'; g.fillRect(0, 0, 1024, 64); g.fillStyle = '#62686f'; for (let x = 0; x < 1024; x += 64) g.fillRect(x, 0, 3, 64); g.fillStyle = '#2c2f33'; g.fillRect(0, 12, 1024, 8); g.fillRect(0, 44, 1024, 8); });
+    const bandE = FL.cv(1024, 64, (g) => { g.fillStyle = '#000'; g.fillRect(0, 0, 1024, 64); for (let x = 3; x < 1024; x += 8) [13, 45].forEach((y) => { if (Math.random() < .72) { g.fillStyle = Math.random() < .85 ? '#ffd9a0' : '#9fd6ff'; g.fillRect(x, y, 5, 6); } }); });
+    const ringM = new THREE.MeshStandardMaterial({ fog: false, map: FL.tx(bandA, 8, 1), emissiveMap: FL.tx(bandE, 8, 1), emissive: C('#ffffff'), emissiveIntensity: 2.4, roughness: .55, metalness: .5, envMapIntensity: .25 });
+    spin.add(new THREE.Mesh(new THREE.TorusGeometry(46, 3.4, 16, 160), ringM));
+    const stM = new THREE.MeshStandardMaterial({ fog: false, color: C('#80868e'), roughness: .5, metalness: .6, envMapIntensity: .25 });
+    for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI * 2, sp = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 40, 10), stM); sp.position.set(Math.cos(a) * 24, Math.sin(a) * 24, 0); sp.rotation.z = a - Math.PI / 2; spin.add(sp); }
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(6.5, 6.5, 12, 24), stM); hub.rotation.x = Math.PI / 2; ringG.add(hub);
+    const spire = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 34, 12), stM); spire.rotation.x = Math.PI / 2; ringG.add(spire);
+    const rBeacon = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunT, color: C('#ff4b3a').multiplyScalar(6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); rBeacon.scale.set(5, 5, 1); rBeacon.position.set(0, 0, 17.5); ringG.add(rBeacon);
     // faint coloured nebula behind the planets
     const nebC = FL.cv(256, 256, (g) => { for (let i = 0; i < 60; i++) { const x = 40 + Math.random() * 176, y = 40 + Math.random() * 176, r = 20 + Math.random() * 60, rg = g.createRadialGradient(x, y, 0, x, y, r); rg.addColorStop(0, Math.random() < .5 ? 'rgba(90,120,255,.09)' : 'rgba(255,110,90,.06)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, 256, 256); } });
     const neb = new THREE.Sprite(new THREE.SpriteMaterial({ map: FL.tx(nebC), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, opacity: .28 })); neb.position.set(40, 160, -1400); neb.scale.set(1500, 1000, 1); scene.add(neb);
@@ -94,6 +110,7 @@
       const a = t * .045; moonlet.position.set(gp.x + Math.cos(a) * 150, gp.y + Math.sin(a) * 38, gp.z + Math.sin(a) * 150); moonlet.material.uniforms.uSun.value.copy(SUN).sub(moonlet.position).normalize();
       mets.forEach((sp) => { const u = sp.userData; u.t += dt; const k = u.t / u.dur; if (k > 1) { sp.material.opacity = 0; if (u.t > u.dur + u.wait) spawnMet(sp); return; } if (u.a == null) return; const d = k * 160; sp.position.set(u.x + Math.cos(u.a) * d, u.y + Math.sin(u.a) * d, u.z); sp.material.opacity = Math.sin(k * Math.PI); });
       const sk = (t * .012) % 1; sh.position.set(-170 + sk * 340, 22 + Math.sin(t * .2) * 1.5, -240); sh.visible = sk > .02 && sk < .98;
+      spin.rotation.z = t * .03; rBeacon.material.opacity = Math.sin(t * 2.2) > .6 ? 1 : .1;
       rocks.forEach((m) => { const u = m.userData; m.rotation.x += u.w.x * dt; m.rotation.y += u.w.y * dt; m.rotation.z += u.w.z * dt; m.position.set(u.o.x + Math.sin(t * .05 + u.p) * 2, u.o.y + Math.sin(t * .07 + u.p) * 1.2, u.o.z); });
       sats.forEach((s) => { const u = s.userData; u.a += u.v * dt; s.position.set(Math.cos(u.a) * u.r, u.h + Math.sin(u.a * 1.7) * 18, -260 - Math.abs(Math.sin(u.a)) * u.r * .8); s.material.opacity = u.strobe ? (Math.sin(t * 2.6 + u.r) > .92 ? 1 : .3) : .5; });
       nav.forEach((n, i) => { n.material.opacity = Math.sin(t * 5 + i * 3) > .6 ? 1 : .15; });

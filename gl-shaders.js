@@ -11,6 +11,13 @@ mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x),mix(h31(i+vec3(0,1,1)),h31(i+
 float fbm(vec3 p){float s=0.,a=.5;for(int i=0;i<6;i++){s+=a*vnoise(p);p=p*2.03+vec3(3.1,1.7,5.3);a*=.5;}return s;}
 float fbm3(vec3 p){float s=0.,a=.5;for(int i=0;i<3;i++){s+=a*vnoise(p);p=p*2.03+vec3(3.1,1.7,5.3);a*=.5;}return s;}
 vec3 rotY(vec3 p,float a){float c=cos(a),s=sin(a);return vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);}
+// craters: only some cells hold one, each with its own size; returns <0 in the bowl, >0 on the raised rim
+float crater(vec3 p){vec3 i=floor(p),f=fract(p);float s=0.;
+for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++)for(int z=-1;z<=1;z++){vec3 o=vec3(float(x),float(y),float(z));
+if(h31(i+o+3.3)<.58)continue;
+vec3 c=o+.2+.6*vec3(h31(i+o),h31(i+o+7.1),h31(i+o+13.7));float r=.16+.3*h31(i+o+5.1);float d=length(c-f)/r;
+s+=-.55*smoothstep(1.,.25,d)+.4*smoothstep(.72,1.,d)*smoothstep(1.35,1.,d);}
+return s;}
 `;
   const VS = `varying vec3 vN;varying vec3 vP;varying vec3 vW;
 void main(){vP=position;vN=normalize(mat3(modelMatrix)*normal);vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`;
@@ -45,6 +52,8 @@ void main(){
  } else {
   float h=fbm(p*2.4);col=mix(uC1,uC2,smoothstep(.35,.68,h));
   col*=.72+.55*fbm(p*16.);col=mix(col,uC3,smoothstep(.6,.66,fbm(p*5.+2.))*.6);
+  // impact craters at two scales: darker bowls with a bright raised rim
+  col*=1.+.55*crater(p*2.3)+.3*crater(p*6.1+11.)+.15*crater(p*13.+5.);
  }
  float nl=dot(n,L);
  float dif=smoothstep(-.12,.6,nl)*.8+max(nl,0.)*.25;
@@ -110,7 +119,7 @@ col*=1.-smoothstep(.44,.7,n2)*core*.95;
 // nebulosity only as a whisper (a coloured haze everywhere reads as fake next to sunlit planets)
 col+=vec3(.04,.028,.055)*pow(fbm3(d*2.2+9.),4.)*.7;
 col+=vec3(.008,.022,.045)*pow(fbm3(d*2.8+3.),4.)*.7;
-float tw=.78+.22*sin(uT*2.3+h31(floor(d*300.))*60.);
+float tw=.94+.06*sin(uT*2.3+h31(floor(d*300.))*60.);   // no atmosphere up here: stars barely shimmer
 // star field: many faint stars, denser along the band, a few bright ones with real star colours
 float st=starL(d,300.,.95-band*.05,.16)*tw+starL(d,640.,.925-band*.08,.2)*.42+starL(d,120.,.993,.11)*3.4;
 float ct=h31(floor(d*300.)+3.);
