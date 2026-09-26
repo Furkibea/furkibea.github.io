@@ -2,7 +2,7 @@
 // Managed with the content panel (admin.html). Hand edits are replaced on the next publish.
 window.FL_CONTENT = {
   "version": 1,
-  "updated": "2026-09-26T00:05:02.000Z",
+  "updated": "2026-09-26T00:38:43.666Z",
   "profile": {
     "available": true,
     "links": {
@@ -13,15 +13,20 @@ window.FL_CONTENT = {
       "discordUser": "furkidev",
       "discordServer": "https://discord.gg/2qmxGHK3G4"
     },
+    "stats": {
+      "games": 15,
+      "visits": 142,
+      "years": 3
+    },
     "discordCard": {
       "banner": "media/dc-banner.jpg",
+      "bio": "https://discord.gg/furkanlua\n18 Age:TR:",
+      "tag": "CEO",
+      "since": "2021-01-13",
       "avatar": "media/dc-avatar.png",
       "nameImg": "media/dc-name.png",
       "name": "Furkan",
-      "tag": "CEO",
       "status": "dnd",
-      "bio": "https://discord.gg/furkanlua\n18 Age:TR:",
-      "since": "2021-01-13",
       "badges": [
         {
           "icon": "media/dc-b1.png",
@@ -78,21 +83,16 @@ window.FL_CONTENT = {
           "url": ""
         }
       ]
-    },
-    "stats": {
-      "games": 15,
-      "visits": 142,
-      "years": 3
     }
   },
   "reels": [
     {
       "id": "r-10",
       "title": "Showreel",
-      "src": "showreel.mp4",
-      "poster": "media/showreel.jpg",
+      "src": "media/r-10-src-muhnvujc.mp4",
+      "poster": "media/r-10-poster-muhnvul3.jpg",
       "date": "",
-      "dur": 18
+      "dur": 88.2
     }
   ],
   "worlds": [
@@ -111,15 +111,15 @@ window.FL_CONTENT = {
       "universeId": 9871416081,
       "favorites": 1902,
       "maxPlayers": 16,
-      "status": "live",
-      "release": "",
       "thumbs": [
         "https://tr.rbxcdn.com/180DAY-ae92e20a04152827fcd0b4def8f15677/768/432/Image/Webp/noFilter",
         "https://tr.rbxcdn.com/180DAY-7028ed52eb4b722976d1e8d670f5df6a/768/432/Image/Webp/noFilter",
         "https://tr.rbxcdn.com/180DAY-2c4be7998ac1242f67643ec314992dd9/768/432/Image/Webp/noFilter",
         "https://tr.rbxcdn.com/180DAY-2e30d3844d4e8cd7281f5f1f031f1f36/768/432/Image/Webp/noFilter",
         "https://tr.rbxcdn.com/180DAY-192ce96cf2a383272bab98852980cae9/768/432/Image/Webp/noFilter"
-      ]
+      ],
+      "status": "live",
+      "release": ""
     },
     {
       "id": "w-next",
@@ -136,9 +136,9 @@ window.FL_CONTENT = {
       "universeId": 0,
       "favorites": 0,
       "maxPlayers": 0,
+      "thumbs": [],
       "status": "soon",
-      "release": "",
-      "thumbs": []
+      "release": ""
     }
   ],
   "logs": [
