@@ -7,3 +7,9 @@ desktop.ini
 admin-local.py
 admin-ac.bat
 __pycache__/
+
+# content panel: runs only on this PC through admin-ac.bat, never on the live site
+admin.html
+admin.js
+admin-core.js
+vendor/jszip.min.js

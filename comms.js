@@ -33,11 +33,17 @@
       const v = c.querySelector('video'); if (v) { if (d === 0 && visible) v.play().catch(() => {}); else v.pause(); }
     });
   }
+  // decode left to right; letters not reached yet are already in place but transparent, so the lines never reflow
   function decode(el, text) {
     cancelAnimationFrame(decRaf); if (decEl && decEl !== el) decEl.textContent = decEl.dataset.t; decEl = el; el.dataset.t = text;
     if (RM) { el.textContent = text; return; }
-    const ch = [...text]; let f = 0;
-    (function tk() { f += 1.5; el.textContent = ch.map((c, i) => (c === ' ' ? ' ' : i < f - 6 ? c : i < f ? GL[(Math.random() * GL.length) | 0] : ' ')).join(''); if (f - 6 < ch.length) decRaf = requestAnimationFrame(tk); else el.textContent = text; })();
+    const ch = [...text], done = document.createTextNode(''), front = document.createTextNode(''), rest = document.createElement('span'); rest.style.opacity = '0';
+    el.textContent = ''; el.append(done, front, rest); let f = 0;
+    (function tk() {
+      f += 1.5; const a = Math.max(0, Math.ceil(f - 6)), b = Math.min(ch.length, Math.ceil(f));
+      done.data = ch.slice(0, a).join(''); front.data = ch.slice(a, b).map((c) => (c === ' ' ? ' ' : GL[(Math.random() * GL.length) | 0])).join(''); rest.textContent = ch.slice(b).join('');
+      if (a < ch.length) decRaf = requestAnimationFrame(tk); else el.textContent = text;
+    })();
   }
   function go(i) {
     i = (i + N) % N; if (i === cur) return; cur = i; auto = 0; burst = 1.4;

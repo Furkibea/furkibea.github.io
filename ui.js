@@ -22,14 +22,19 @@
     walk(el);
   });
 
-  // ---------- scramble headings ----------
-  const GL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#/_';
-  function scramble(el) {
-    const fin = el.dataset.f || (el.dataset.f = el.textContent); let f = 0;
-    el.innerHTML = '<span class="scr-f"></span><span class="scr-o" aria-hidden="true"></span>'; el.firstChild.textContent = fin; const o = el.lastChild;
-    const tick = () => { f++; o.textContent = [...fin].map((c, i) => c === ' ' ? ' ' : (i < f / 2 ? c : GL[(Math.random() * GL.length) | 0])).join(''); if (f / 2 < fin.length) requestAnimationFrame(tick); else el.textContent = fin; };
-    tick();
+  // ---------- scramble text (section headings, game names) ----------
+  // the final text keeps its place invisibly while the scramble runs in an overlay, so nothing around it moves;
+  // starting a new scramble on an element cancels the one still running there
+  const GL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#/_', RMQ = matchMedia('(prefers-reduced-motion: reduce)'), scrRaf = new WeakMap();
+  function scramble(el, text, pace) {
+    const fin = text != null ? String(text) : (el.dataset.f || el.textContent); el.dataset.f = fin;
+    cancelAnimationFrame(scrRaf.get(el));
+    if (RMQ.matches) { el.textContent = fin; return; }
+    el.innerHTML = '<span class="scr-f"></span><span class="scr-o" aria-hidden="true"></span>'; el.firstChild.textContent = fin;
+    const o = el.lastChild, ch = [...fin], k = pace || 2; let f = 0;
+    (function tick() { f++; o.textContent = ch.map((c, i) => c === ' ' ? ' ' : (i < f / k ? c : GL[(Math.random() * GL.length) | 0])).join(''); if (f / k < ch.length) scrRaf.set(el, requestAnimationFrame(tick)); else el.textContent = fin; })();
   }
+  FL.scramble = scramble;
 
   // ---------- reveals ----------
   const io = new IntersectionObserver((es) => es.forEach((e) => {

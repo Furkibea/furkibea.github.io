@@ -15,7 +15,12 @@
   // ---------- arc ----------
   const arcv = $('#arcv'), arc = $('#arc'), arcn = $('#arcn'), arct = $('#arct'), arcd = $('#arcd'), rail = $('#rail'), amb = $('#amb'), ambG = amb.getContext('2d');
   let R = 1100, step = 16, rot = 0, vel = 0, tgt = 0, intro = 0, visible = false, lastF = -1, lastRot = NaN, lastIntro = -1, ambT = 0;
-  const drag = { on: false, x: 0, moved: 0 };
+  const drag = { on: false, x: 0, moved: 0, card: -1 };
+  const solo = N < 2, few = N < 3;
+  // a single clip needs no rail, arrows or "next" in the player
+  sec.classList.toggle('solo', solo); th.classList.toggle('solo', solo);
+  const rt = $('.r-meta span:last-child'); if (rt && solo) rt.textContent = 'Click or Enter to play';
+  if (rc && rc.nextSibling) rc.nextSibling.textContent = N === 1 ? ' clip on file' : ' clips on file';
   rail.innerHTML = reels.map((_, i) => `<button aria-label="Clip ${i + 1}"><i></i></button>`).join('');
   const ticks = [...rail.children]; ticks.forEach((b, i) => b.addEventListener('click', () => snapTo(i)));
   $('#arcplay').addEventListener('click', () => open(focusIdx()));
@@ -32,19 +37,29 @@
     f.addEventListener('pointerenter', () => { if (!drag.on) play(i); });
     f.addEventListener('pointerleave', () => { if (i !== lastF) v.pause(); cin.style.transform = ''; });
     f.addEventListener('pointermove', (e) => { const b = f.getBoundingClientRect(), mx = (e.clientX - b.left) / b.width, my = (e.clientY - b.top) / b.height; cin.style.transform = `translateZ(46px) rotateX(${(.5 - my) * 14}deg) rotateY(${(mx - .5) * 18}deg)`; f.style.setProperty('--mx', mx * 100 + '%'); f.style.setProperty('--my', my * 100 + '%'); });
-    f.addEventListener('click', () => { if (drag.moved > 6) return; const a = i * step + rot; if (Math.abs(a) > step * .6) { snapTo(i); return; } open(i); });
     arc.appendChild(f); return f;
   });
 
-  function dims() { const cw = Math.max(190, Math.min(290, innerWidth * .21)); arcv.style.setProperty('--cw', cw + 'px'); R = cw * 3.9; step = (cw + 34) / R * 180 / Math.PI; lastRot = NaN; }
+  // card size: one or two clips get a big screen, more clips the arc; phones nearly full width
+  function dims() {
+    const cw = innerWidth < 700 ? Math.min(innerWidth * .84, 480) : few ? Math.max(340, Math.min(640, innerWidth * .46)) : Math.max(220, Math.min(340, innerWidth * .24));
+    arcv.style.setProperty('--cw', cw + 'px'); arcv.style.setProperty('--ah', few ? .8 : 1.05); R = cw * 3.9; step = (cw + 34) / R * 180 / Math.PI; lastRot = NaN;
+  }
   dims();
   const minR = () => -(N - 1) * step;
   const focusIdx = () => Math.max(0, Math.min(N - 1, Math.round(-rot / step)));
   function snapTo(i) { vel = 0; tgt = -Math.max(0, Math.min(N - 1, i)) * step; }
   addEventListener('resize', () => { const fi = focusIdx(); dims(); rot = tgt = -fi * step; if (!visible) layout(); });
-  arcv.addEventListener('pointerdown', (e) => { drag.on = true; drag.x = e.clientX; drag.moved = 0; vel = 0; tgt = null; arcv.setPointerCapture(e.pointerId); arcv.classList.add('grab'); });
+  arcv.addEventListener('pointerdown', (e) => { const c = e.target.closest('.card'); drag.on = true; drag.x = e.clientX; drag.moved = 0; drag.card = c ? cards.indexOf(c) : -1; vel = 0; tgt = null; arcv.setPointerCapture(e.pointerId); arcv.classList.add('grab'); });
   arcv.addEventListener('pointermove', (e) => { if (!drag.on) return; const dx = e.clientX - drag.x; drag.x = e.clientX; drag.moved += Math.abs(dx); const k = dx * .075; let nr = rot + k; if (nr > 0 || nr < minR()) nr = rot + k * .35; vel = nr - rot; rot = nr; });
-  const endDrag = () => { if (!drag.on) return; drag.on = false; arcv.classList.remove('grab'); setTimeout(() => { drag.moved = 0; }, 0); };
+  // pointer capture (needed for dragging) sends the click to the arc instead of the card, so a tap is resolved here:
+  // tapping a side card brings it to the front, tapping the front card plays it
+  const endDrag = (e) => {
+    if (!drag.on) return; drag.on = false; arcv.classList.remove('grab');
+    const i = drag.card; drag.card = -1;
+    if (e && e.type === 'pointerup' && i >= 0 && drag.moved <= 6) { if (Math.abs(i * step + rot) > step * .6) snapTo(i); else open(i); }
+    setTimeout(() => { drag.moved = 0; }, 0);
+  };
   arcv.addEventListener('pointerup', endDrag); arcv.addEventListener('pointercancel', endDrag);
   arcv.addEventListener('wheel', (e) => { if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) { e.preventDefault(); tgt = null; vel -= e.deltaX * .012; } }, { passive: false });
   $('#arcprev').addEventListener('click', () => snapTo(focusIdx() - 1));
@@ -54,7 +69,7 @@
   (function tick() { requestAnimationFrame(tick); if (visible) render(); })();
 
   function layout() {
-    arc.style.transform = `translateZ(${R - 170}px)`;
+    arc.style.transform = `translateZ(${R - (few ? 40 : 170)}px)`;
     for (let i = 0; i < N; i++) {
       const f = cards[i], a = i * step + rot, ab = Math.abs(a);
       const d = Math.max(0, Math.min(1, intro * 1.6 - Math.min(i, 8) * .07)), e = 1 - Math.pow(1 - d, 3);
@@ -101,7 +116,7 @@
     vid.play().catch(() => {});
   }
   function close() { vid.pause(); th.classList.remove('on', 'playing'); th.setAttribute('aria-hidden', 'true'); FL.cinema = 0; FL.theaterOpen = false; lastF = -1; }
-  const step2 = (d) => { const i = (cur + d + N) % N; snapTo(i); open(i); };
+  const step2 = (d) => { if (solo) return; const i = (cur + d + N) % N; snapTo(i); open(i); };
   $('#thx').addEventListener('click', close); $('.th-bg', th).addEventListener('click', close);
   $('#thprev').addEventListener('click', () => step2(-1)); $('#thnext').addEventListener('click', () => step2(1));
   function setState() { const on = !vid.paused && !vid.ended; th.classList.toggle('playing', on); FL.cinema = on && th.classList.contains('on') ? 1 : 0; }

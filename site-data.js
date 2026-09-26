@@ -3,11 +3,14 @@
   const FL = window.FL = window.FL || {};
   // content.js is revalidated with the server on every visit (ETag, so usually a tiny 304): a publish shows up on the next
   // page load instead of after the host's 10-minute browser cache. Falls back to a plain <script> (file://, old browsers).
+  // content.js is read as data (the JSON after "window.FL_CONTENT ="), never run as inline code, so the page's CSP can forbid inline scripts
   const tag = () => new Promise((res) => { const s = document.createElement('script'); s.src = 'content.js'; s.onload = s.onerror = () => res(window.FL_CONTENT || {}); document.head.appendChild(s); });
+  const parse = (t) => { const i = t.indexOf('{'), j = t.lastIndexOf('}'); if (i < 0 || j < i) throw 0; return JSON.parse(t.slice(i, j + 1)); };
   const pub = window.FL_CONTENT ? Promise.resolve(window.FL_CONTENT) : window.fetch && location.protocol !== 'file:'
-    ? fetch('content.js', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw 0; return r.text(); }).then((t) => { const s = document.createElement('script'); s.textContent = t; document.head.appendChild(s); s.remove(); if (!window.FL_CONTENT) throw 0; return window.FL_CONTENT; }).catch(tag)
+    ? fetch('content.js', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw 0; return r.text(); }).then(parse).catch(tag)
     : tag();
-  const preview = /[?&]preview\b/.test(location.search);
+  // drafts only exist in the content panel on your own PC, so preview mode only works there
+  const preview = /[?&]preview\b/.test(location.search) && /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
   const norm = (d) => Object.assign({ profile: {}, reels: [], worlds: [], logs: [] }, d || {});
   function draft() {
     return new Promise((res) => {

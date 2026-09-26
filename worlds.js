@@ -140,12 +140,8 @@
   }
   addEventListener('resize', () => fitName($('#lgname'), W[cur].name));
   if (document.fonts) document.fonts.ready.then(() => fitName($('#lgname'), W[cur].name));
-  const GL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', rafs = new Map();
-  function scr(el, text) {
-    cancelAnimationFrame(rafs.get(el)); if (RM) { el.textContent = text; return; }
-    const fin = [...text]; let f = 0;
-    (function sc() { f++; el.textContent = fin.map((ch, k) => ch === ' ' ? ' ' : (k < f / 1.4 ? ch : GL[(Math.random() * GL.length) | 0])).join(''); if (f / 1.4 < fin.length) rafs.set(el, requestAnimationFrame(sc)); else el.textContent = text; })();
-  }
+  // text swaps share ui.js's scramble: layout-stable, and a newer swap cancels an older one on the same element
+  const swap = (el, t) => (FL.scramble ? FL.scramble(el, t, 1.4) : (el.textContent = t));
   function show(i, anim) {
     cur = i; want = i; const w = W[i];
     tabsOn(i);
@@ -157,9 +153,11 @@
     if (soon(w) && !w.url) pl.dataset.link = 'discord'; else delete pl.dataset.link;
     $('#lglive').innerHTML = soon(w) ? '<i class="ldot soon"></i>In development' : '<i class="ldot"></i>Live';
     $('#lgstats').innerHTML = statsHTML(w);
-    const hd = $('#lgh'), ht = headOf(w); if (hd.textContent !== ht && !hd.querySelector('.scr-o')) { if (anim) scr(hd, ht); else hd.textContent = ht; }
+    // heading: before its first reveal just set the text (ui.js scrambles it in); after that, swap it
+    const hd = $('#lgh'), ht = headOf(w);
+    if ((hd.dataset.f || hd.textContent) !== ht) { if (anim && hd.dataset.f) swap(hd, ht); else { hd.textContent = ht; if (hd.dataset.f) hd.dataset.f = ht; } }
     FL.tint = w.color || '#5ec8ff';
-    fitName($('#lgname'), w.name); scr($('#lgname'), w.name);
+    const nm = $('#lgname'); fitName(nm, w.name); swap(nm, w.name);
     nums.clear(); if (anim) ['#lgccu', '#lgv', '#lgfav'].forEach((q) => { const el = $(q); if (el) nums.set(el, 0); });
     slides = []; paintStats(); buildSlides();
   }

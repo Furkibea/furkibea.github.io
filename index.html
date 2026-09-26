@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- only this site's own scripts may run; data and media only from the services the page actually uses -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.rbxcdn.com https://cdn.discordapp.com https://media.discordapp.net https://i.ytimg.com; media-src 'self' blob:; connect-src 'self' https://*.roproxy.com https://api.lanyard.rest; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>FURKANLUA — Roblox Scripter</title>
 <meta name="description" content="FurkanLua — Roblox scripter and frontend developer. Live worlds, flight footage and field logs from a 3D space station.">
 <meta name="theme-color" content="#060708">
@@ -271,7 +274,7 @@ body.live .cue{opacity:1;transform:none}
 .r-top{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
 .r-top .sec-h{margin-bottom:0}
 .r-hint{padding-bottom:10px}
-.arcv{--cw:260px;position:relative;height:calc(var(--cw) * 1.05 + 60px);perspective:1100px;perspective-origin:50% 50%;margin-top:4vh;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.arcv{--cw:260px;position:relative;height:calc(var(--cw) * var(--ah,1.05) + 60px);perspective:1100px;perspective-origin:50% 50%;margin-top:4vh;touch-action:pan-y;user-select:none;-webkit-user-select:none}
 .arc{position:absolute;left:50%;top:50%;transform-style:preserve-3d}
 .card{position:absolute;left:0;top:0;width:var(--cw);transform-style:preserve-3d;will-change:transform,opacity}
 .cin{position:relative;transform-style:preserve-3d;transition:transform .6s var(--ease),border-color .4s,background .4s;padding:7px 7px 0;background:rgba(236,238,240,.035);border:1px solid rgba(236,238,240,.2)}
@@ -300,7 +303,7 @@ body.live .cue{opacity:1;transform:none}
 #theater.on{visibility:visible;pointer-events:auto;transition:none}
 .th-bg{position:absolute;inset:0;background:rgba(3,4,5,.78);opacity:0;transition:opacity .5s}
 #theater.on .th-bg{opacity:1}
-.th-panel{position:relative;width:min(1120px,92vw,calc(70vh * 16 / 9 + 34px));background:#0a0b0d;border:1px solid rgba(236,238,240,.12);padding:16px;opacity:0;transform:perspective(1400px) rotateX(10deg) translateY(50px) scale(.94);transition:transform .8s var(--ease),opacity .45s;box-shadow:0 50px 140px rgba(0,0,0,.7)}
+.th-panel{position:relative;width:min(1400px,94vw,calc(78vh * 16 / 9 + 34px));background:#0a0b0d;border:1px solid rgba(236,238,240,.12);padding:16px;opacity:0;transform:perspective(1400px) rotateX(10deg) translateY(50px) scale(.94);transition:transform .8s var(--ease),opacity .45s;box-shadow:0 50px 140px rgba(0,0,0,.7)}
 #theater.on .th-panel{opacity:1;transform:none}
 .th-top{display:flex;align-items:center;gap:14px;padding-bottom:14px}
 .th-top #tht{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
@@ -454,6 +457,13 @@ a.dp-ci:hover span{text-decoration:underline}
 /* no WebGL: skip the 3D scene, keep the site */
 html.nogl{background:radial-gradient(120% 80% at 70% 0%,#141820,#060708 62%) fixed,var(--bg)}
 .nogl #gl,.nogl .hi-tip{display:none}
+/* scrambled game names run in an overlay (see ui.js) */
+.lg-name{position:relative}
+/* footage: the custom cursor already says "Play" on mouse devices; touch screens show the button on the front clip */
+@media (pointer:fine){.card .pl{display:none}}
+@media (pointer:coarse){.card.fo .pl{transform:none;opacity:1}}
+/* a single clip has nothing to step through */
+#reel.solo .rail,#reel.solo #arcprev,#reel.solo #arcnext,#theater.solo #thprev,#theater.solo #thnext{display:none}
 </style>
 </head>
 <body class="locked">
@@ -627,16 +637,16 @@ html.nogl{background:radial-gradient(120% 80% at 70% 0%,#141820,#060708 62%) fix
 <script src="vendor/three/ShaderPass.js"></script>
 <script src="vendor/three/UnrealBloomPass.js"></script>
 <script src="vendor/three/Reflector.js"></script>
-<script src="site-data.js?v=2"></script>
+<script src="site-data.js?v=3"></script>
 <script src="gl-shaders.js"></script>
 <script src="gl-station.js"></script>
 <script src="gl-space.js"></script>
 <script src="gl-avatar.js"></script>
 <script src="gl-main.js"></script>
-<script src="ui.js?v=4"></script>
+<script src="ui.js?v=5"></script>
 <script src="discord.js?v=5"></script>
-<script src="worlds.js"></script>
-<script src="comms.js"></script>
-<script src="gallery.js"></script>
+<script src="worlds.js?v=2"></script>
+<script src="comms.js?v=2"></script>
+<script src="gallery.js?v=2"></script>
 </body>
 </html>
