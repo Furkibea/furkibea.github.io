@@ -15,9 +15,17 @@
   const station = FL.buildStation(scene, renderer);
   const space = FL.buildSpace(scene);
   FL.progress = 0;
-  if (station.reflector) { const ob = station.reflector.onBeforeRender; station.reflector.onBeforeRender = function (r, s, c) { space.sky.visible = false; ob.call(this, r, s, c); space.sky.visible = true; }; }
+  if (station.reflector) {
+    const ob = station.reflector.onBeforeRender;
+    station.reflector.onBeforeRender = function (r, s, c) {
+      const skip = props ? props.noReflect.filter((o) => o.visible) : [];
+      space.sky.visible = false; skip.forEach((o) => { o.visible = false; });
+      ob.call(this, r, s, c);
+      space.sky.visible = true; skip.forEach((o) => { o.visible = true; });
+    };
+  }
   const avatar = FL.loadAvatar(scene, (p) => { FL.progress = p; });
-  const props = FL.buildProps ? FL.buildProps(scene) : null;   // bridge, suits, equipment (gl-props.js)
+  const props = FL.buildProps ? FL.buildProps(scene, avatar) : null;   // bridge, avatar bay, hologram, equipment (gl-props.js)
   FL.avatar = avatar;
 
   scene.add(new THREE.HemisphereLight(C('#9fb0c4'), C('#0a0b0e'), .55));

@@ -59,7 +59,7 @@
   });
 
   // ---------- boot ----------
-  const LOG = ['<b>FURKANLUA STATION OS</b> 4.0', '› mounting hull plates ........ ok', '› pressurising deck 01–03 ..... ok', '› loading pilot  sa.obj', '› calibrating optics .......... ok', '› all systems nominal'];
+  const LOG = ['<b>FURKANLUA STATION OS</b> 4.0', '› mounting hull plates ........ ok', '› pressurising deck 01–03 ..... ok', '› loading pilot  fl.obj', '› calibrating optics .......... ok', '› all systems nominal'];
   const bl = $('#bootlog'), bn = $('#bootn'), bb = $('#bootbar'), bs = $('#bootst');
   let shown = 0, disp = 0, lastB = performance.now(), booted = false; const t0 = performance.now();
   // every visit starts at deck 01: stop the browser restoring a mid-page scroll under the boot screen

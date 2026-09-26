@@ -1,10 +1,11 @@
 // gl-props.js — the ship's furniture and equipment, built from simple shapes with canvas-drawn detail:
 // the bridge on the observation deck (helm desk, two stations, pilot seats, live screens, overhead switch panel,
-// hologram), EVA suits, lockers, extinguishers, valves and wall panels in the corridor, and a Roblox R6 hologram.
+// hologram), and in the corridor the pilot's own Roblox character twice: on a turntable in the avatar bay and as a
+// hologram over the hangar's holo table; plus lockers, extinguishers, valves and wall panels.
 // Scale: the pilot is 4.3 units tall (~1.8 m), so 1 m ≈ 2.4 units. Static parts are merged per material.
 (function () {
   const FL = window.FL = window.FL || {};
-  FL.buildProps = function (scene) {
+  FL.buildProps = function (scene, avatar) {
     const C = FL.C, cv = FL.cv, tx = FL.tx;
     const upd = []; let zNow = 0;
     const rng = (seed) => { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; };
@@ -20,7 +21,6 @@
     const round = (g, x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
     const M = {
       gun: std('#2b2f36', .42, .72), gunDark: std('#16181c', .5, .6), trim: std('#a0a6ae', .28, .9), leather: std('#141518', .45, .12),
-      suit: std('#e6e8ea', .78, .02), suitDark: std('#59606a', .6, .3), visor: std('#c99a3c', .12, 1, { envMapIntensity: 1.8 }),
       orange: std('#c2531f', .5, .2), red: std('#b3261e', .45, .2),
     };
 
@@ -174,25 +174,6 @@
       [-1, 1].forEach((s) => { box(.15, .12, .92, M.gun, s * .72, 1.6, .06, 0, 0, 0, g); box(.1, .42, .1, M.gun, s * .72, 1.38, .45, 0, 0, 0, g); });
       return bake(g);
     }
-    function suit(x, z, ry) {
-      const g = group(x, 0, z, ry);
-      [-1, 1].forEach((s) => {
-        box(.52, .32, .8, M.suitDark, s * .36, .16, .09, 0, 0, 0, g);
-        cyl(.22, .24, 1.05, 12, M.suit, s * .36, .85, 0, 0, 0, 0, g); cyl(.26, .26, .1, 12, M.suitDark, s * .36, 1.38, 0, 0, 0, 0, g); cyl(.26, .24, 1.0, 12, M.suit, s * .34, 1.92, 0, 0, 0, 0, g);
-        ball(.28, M.suit, s * .74, 3.82, 0, g); cyl(.2, .19, .86, 12, M.suit, s * .82, 3.3, 0, 0, 0, s * .1, g); cyl(.19, .19, .08, 12, M.suitDark, s * .86, 2.86, .02, 0, 0, s * .08, g);
-        cyl(.18, .17, .78, 12, M.suit, s * .88, 2.46, .08, -.12, 0, s * .05, g); box(.27, .34, .21, M.suitDark, s * .9, 1.98, .14, 0, 0, 0, g);
-      });
-      box(1.06, .46, .66, M.suit, 0, 2.52, 0, 0, 0, 0, g); box(.98, .1, .62, M.suitDark, 0, 2.76, 0, 0, 0, 0, g);
-      cyl(.64, .56, 1.25, 16, M.suit, 0, 3.38, 0, 0, 0, 0, g); box(.64, .42, .18, M.suitDark, 0, 3.32, .6, 0, 0, 0, g);
-      box(.14, .1, .03, glow('#4fe39a', 3), -.16, 3.4, .7, 0, 0, 0, g); box(.14, .1, .03, glow('#ff5b1f', 3), .1, 3.4, .7, 0, 0, 0, g); box(.3, .06, .03, glow('#6fd6ff', 2.5), -.03, 3.22, .7, 0, 0, 0, g);
-      box(1.02, 1.34, .56, M.suit, 0, 3.42, -.58, 0, 0, 0, g); box(.8, .2, .1, M.suitDark, 0, 3.9, -.88, 0, 0, 0, g);
-      box(.12, .7, .06, M.orange, -.54, 3.4, .5, 0, 0, 0, g); box(.12, .7, .06, M.orange, .54, 3.4, .5, 0, 0, 0, g);
-      cyl(.43, .46, .13, 20, M.suitDark, 0, 4.08, 0, 0, 0, 0, g); add(new THREE.SphereGeometry(.49, 20, 16), M.suit, 0, 4.48, -.04, 0, 0, 0, g);
-      add(new THREE.SphereGeometry(.51, 20, 14, Math.PI * .05, Math.PI * .9, Math.PI * .22, Math.PI * .45), M.visor, 0, 4.49, 0, 0, 0, 0, g);
-      box(.18, .07, .05, glow('#ffffff', 3), -.27, 4.76, .33, 0, 0, 0, g);
-      return bake(g);
-    }
-
     // ===== BRIDGE on the observation deck (window at z -58, pilot stands at z -50) =====
     const grateT = tx(cv(256, 256, (g) => { g.fillStyle = '#1c1e22'; g.fillRect(0, 0, 256, 256); g.strokeStyle = '#0a0b0d'; g.lineWidth = 6; for (let i = -256; i < 512; i += 32) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 256, 256); g.stroke(); g.beginPath(); g.moveTo(i, 256); g.lineTo(i + 256, 0); g.stroke(); } g.strokeStyle = 'rgba(255,255,255,.05)'; g.lineWidth = 2; g.strokeRect(4, 4, 248, 248); }), 9, 3);
     box(21.4, .1, 6.3, std('#3e434b', .55, .7, { map: grateT }), 0, .05, -54.5);                     // raised bridge platform
@@ -234,11 +215,92 @@
     upd.push((t) => { if (zNow > -34) return; hs.rotation.y = t * .6; hr.rotation.z = t * .3; holo.position.y = 3.2 + Math.sin(t * 1.4) * .06; hm.opacity = .35 + Math.sin(t * 9) * .04 + (Math.random() < .02 ? -.25 : 0); });
 
     // ===== CORRIDOR =====
-    // EVA suit lockers on the right wall past the crew quarters: backlit alcoves
-    [-8.4, -10.45].forEach((z) => {
-      box(.1, 5.4, 1.9, M.gunDark, 7.78, 2.75, z); box(.04, 5.2, .06, glow('#bfe6ff', 2.2), 7.72, 2.75, z - .9); box(.04, 5.2, .06, glow('#bfe6ff', 2.2), 7.72, 2.75, z + .9);
-      box(1.6, .12, 1.7, M.gun, 6.95, .06, z); suit(6.65, z, -Math.PI / 2);
-    });
+    // the pilot's own character appears twice: in full colour in the avatar bay, and as the hangar's hologram.
+    // Both are built from the avatar's rig once it has loaded (avatar.onReady), sharing its geometry and textures.
+    let K = null, bayFig = null, holoFig = null;
+    const dialT = tx(cv(256, 256, (g) => { g.translate(128, 128); g.strokeStyle = 'rgba(127,216,255,.9)'; [120, 96, 70, 40].forEach((r, i) => { g.lineWidth = i ? 1.5 : 3; g.beginPath(); g.arc(0, 0, r, 0, 7); g.stroke(); }); for (let i = 0; i < 36; i++) { const a = i / 36 * Math.PI * 2; g.beginPath(); g.moveTo(Math.cos(a) * 100, Math.sin(a) * 100); g.lineTo(Math.cos(a) * 114, Math.sin(a) * 114); g.stroke(); } }));
+    const dotT = tx(cv(32, 32, (g) => { const r = g.createRadialGradient(16, 16, 0, 16, 16, 16); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 32, 32); }));
+    // canvas text drawn again once the web fonts are in
+    const textTex = (w, h, draw) => { const c = cv(w, h, draw), t = tx(c); if (document.fonts) document.fonts.ready.then(() => { const g = c.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h); draw(g, w, h); t.needsUpdate = true; }); return t; };
+    // light motes rising through a column, fading in and out at its ends
+    function motes(parent, n, r, y0, y1, hex, size) {
+      const p = new Float32Array(n * 3), col = new Float32Array(n * 3), sp = new Float32Array(n);
+      for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, d = Math.sqrt(Math.random()) * r; p.set([Math.cos(a) * d, y0 + Math.random() * (y1 - y0), Math.sin(a) * d], i * 3); sp[i] = .2 + Math.random() * .5; }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      const pts = new THREE.Points(g, new THREE.PointsMaterial({ size, map: dotT, color: C(hex).multiplyScalar(2.2), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+      pts.frustumCulled = false; parent.add(pts);
+      return (dt) => {
+        for (let i = 0; i < n; i++) { let y = p[i * 3 + 1] + sp[i] * dt; if (y > y1) y = y0; p[i * 3 + 1] = y; const k = Math.sin(Math.PI * (y - y0) / (y1 - y0)); col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = k; }
+        g.attributes.position.needsUpdate = true; g.attributes.color.needsUpdate = true;
+      };
+    }
+    const FRES_V = 'varying vec3 vN,vV;varying vec2 vUv;varying float vY;void main(){vUv=uv;vY=(modelMatrix*vec4(position,1.)).y;vec4 mv=modelViewMatrix*vec4(position,1.);vV=-mv.xyz;vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*mv;}';
+
+    // avatar bay on the right wall past the crew quarters: the character on a slow turntable under a ring light. Open, not
+    // behind glass, so any outfit fits: coats and capes flare out wider than a tube this corridor could hold.
+    const bay = group(4.85, 0, -11, -.32);          // local +z looks up the corridor, toward the camera
+    const bayG = glow('#6fd6ff', 2.4), bayO = glow('#ff7a3d', 2.4);
+    cyl(1.9, 2.0, .22, 64, M.gunDark, 0, .11, 0, 0, 0, 0, bay);
+    cyl(1.72, 1.8, .3, 64, M.gun, 0, .37, 0, 0, 0, 0, bay);
+    for (let i = 0; i < 20; i++) { const a = (i + .5) / 20 * Math.PI * 2; box(.24, .045, .03, i % 5 ? bayG : bayO, Math.sin(a) * 1.775, .3, Math.cos(a) * 1.775, 0, a, 0, bay); }
+    add(new THREE.TorusGeometry(1.66, .028, 6, 96), glow('#6fd6ff', 3), 0, .525, 0, Math.PI / 2, 0, 0, bay);
+    const tt = group(0, .53, 0, 0, bay);           // turntable
+    cyl(1.5, 1.52, .06, 64, M.gunDark, 0, .03, 0, 0, 0, 0, tt);
+    add(new THREE.CircleGeometry(1.46, 64), additive('#7fd8ff', 1.1, .45, { map: dialT, side: THREE.FrontSide }), 0, .062, 0, -Math.PI / 2, 0, 0, tt);
+    // back pillar with a light strip, and the arm that holds the ring light over the figure
+    box(.5, 6.7, .36, M.gun, 0, 3.85, -2.3, 0, 0, 0, bay); box(.07, 6.0, .03, glow('#6fd6ff', 2.6), 0, 3.7, -2.11, 0, 0, 0, bay);
+    box(.3, .22, 2.2, M.gun, 0, 6.95, -1.2, 0, 0, 0, bay); cyl(.26, .3, .3, 20, M.gunDark, 0, 6.95, 0, 0, 0, 0, bay);
+    for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + Math.PI / 3; box(1.3, .06, .08, M.trim, Math.sin(a) * .92, 6.86, Math.cos(a) * .92, 0, a - Math.PI / 2, 0, bay); }   // spokes
+    // ring light: a name band outside, dark metal inside, a glowing underside
+    const bandDraw = (em) => (g) => {
+      g.fillStyle = em ? '#000' : '#2b2f36'; g.fillRect(0, 0, 1024, 92);
+      if (!em) { g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0, 6, 1024, 3); g.fillRect(0, 83, 1024, 3); }
+      g.font = '800 50px "Anybody","Arial Black",sans-serif'; g.fillStyle = em ? '#d4f3ff' : '#59616b'; g.fillText('FURKANLUA', 60, 64);
+      g.font = '600 22px "IBM Plex Mono",monospace'; g.fillStyle = em ? '#6fd6ff' : '#48505a'; g.fillText('AVATAR BAY 01', 440, 60);
+      g.fillStyle = em ? '#4fe39a' : '#2f3b34'; g.beginPath(); g.arc(648, 52, 7, 0, 7); g.fill(); g.fillStyle = em ? '#4fe39a' : '#48505a'; g.fillText('READY', 662, 60);
+      g.fillStyle = em ? 'rgba(111,214,255,.5)' : '#3a4048'; for (let x = 800; x < 1000; x += 14) g.fillRect(x, 40, 6, 14);
+    };
+    const bandT = textTex(1024, 92, bandDraw(false)), bandE = textTex(1024, 92, bandDraw(true)); bandT.repeat.x = bandE.repeat.x = 2;
+    const halo = group(0, 6.55, 0, -.21 * Math.PI * 2, bay);   // turned so a label faces the corridor
+    add(new THREE.CylinderGeometry(1.62, 1.62, .46, 96, 1, true), new THREE.MeshStandardMaterial({ map: bandT, emissiveMap: bandE, emissive: C('#ffffff'), emissiveIntensity: 1.7, roughness: .45, metalness: .6 }), 0, 0, 0, 0, 0, 0, halo).userData.keep = true;
+    add(new THREE.CylinderGeometry(1.5, 1.5, .46, 64, 1, true), std('#16181c', .5, .6, { side: THREE.BackSide }), 0, 0, 0, 0, 0, 0, halo);
+    add(new THREE.RingGeometry(1.5, 1.62, 96), M.gun, 0, .23, 0, -Math.PI / 2, 0, 0, halo);
+    add(new THREE.RingGeometry(1.5, 1.62, 96), glow('#e8f7ff', 3.2), 0, -.23, 0, Math.PI / 2, 0, 0, halo);
+    const bea = ball(.09, glow('#4fe39a', 4), 0, 7.12, -.3, bay); bea.userData.keep = true;
+    // the light falling from the ring onto the stage
+    const coneC = cv(64, 256, (g) => { const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.5, 'rgba(255,255,255,.25)'); gr.addColorStop(1, 'rgba(255,255,255,.05)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 256); });
+    add(new THREE.CylinderGeometry(1.52, 1.72, 5.85, 64, 1, true), additive('#fff4e8', .9, .045, { map: clamp(tx(coneC)) }), 0, 3.4, 0, 0, 0, 0, bay);
+    cyl(.08, .08, 2.4, 10, M.trim, 6.75, 7.0, -13.18, 0, 0, Math.PI / 2);   // conduit from the pillar top into the wall (world space)
+    // name tag on the pedestal
+    const tagDraw = (em) => (g) => {
+      g.fillStyle = em ? '#000' : '#1b1e23'; g.fillRect(0, 0, 512, 128);
+      g.font = '800 46px "Anybody","Arial Black",sans-serif'; g.fillStyle = em ? '#ffffff' : '#5a626c'; g.fillText('FURKANLUA', 24, 62);
+      g.font = '600 20px "IBM Plex Mono",monospace'; g.fillStyle = em ? '#ff7a3d' : '#48505a'; g.fillText('PILOT · ROBLOX SCRIPTER', 26, 100);
+    };
+    add(new THREE.PlaneGeometry(1.1, .275), new THREE.MeshStandardMaterial({ map: textTex(512, 128, tagDraw(false)), emissiveMap: textTex(512, 128, tagDraw(true)), emissive: C('#ffffff'), emissiveIntensity: 1.4, roughness: .5, metalness: .4 }), 0, .37, 1.8, -.26, 0, 0, bay);
+    const bayMotes = motes(bay, 50, 1.4, .7, 6.2, '#dff4ff', .05);
+    // backlit recess in the wall behind it
+    box(.1, 6.6, 3.8, M.gunDark, 7.82, 3.9, -11); [-1.85, 1.85].forEach((dz) => box(.04, 6.4, .06, glow('#bfe6ff', 2.2), 7.76, 3.9, -11 + dz));
+    // lit by the bay alone, not by the lights that follow the pilot (their blue rim would tint it): a warm key from the ring
+    // light, a soft fill, a faint cool edge, and the texture's own colours
+    const figU = {
+      uKeyDir: { value: new THREE.Vector3(-.3, .85, .45).normalize() }, uKey: { value: C('#fff3e6').multiplyScalar(2.0) },
+      uFillDir: { value: new THREE.Vector3(.8, .1, .3).normalize() }, uFill: { value: C('#eef2fa').multiplyScalar(.5) },
+      uAmb: { value: C('#ffffff').multiplyScalar(.38) }, uRim: { value: C('#e2f1ff').multiplyScalar(.24) },
+    };
+    const FIG_V = 'varying vec3 vW,vP,vN,vV;varying vec2 vUv;void main(){vUv=uv;vW=mat3(modelMatrix)*normal;vP=(modelMatrix*vec4(position,1.)).xyz;vec4 mv=modelViewMatrix*vec4(position,1.);vV=-mv.xyz;vN=normalMatrix*normal;gl_Position=projectionMatrix*mv;}';
+    const FIG_F = `uniform sampler2D map;uniform vec3 uKeyDir,uKey,uFillDir,uFill,uAmb,uRim;varying vec3 vW,vP,vN,vV;varying vec2 vUv;
+      void main(){vec4 tx=texture2D(map,vUv);if(tx.a<.45)discard;vec3 alb=pow(tx.rgb,vec3(2.2));float s=gl_FrontFacing?1.:-1.;
+        vec3 wn=normalize(vW)*s,n=normalize(vN)*s,v=normalize(vV);float fr=pow(1.-clamp(dot(n,v),0.,1.),3.);
+        float kd=max(dot(wn,uKeyDir),0.);vec3 h=normalize(uKeyDir+normalize(cameraPosition-vP));
+        vec3 c=alb*(uAmb+uKey*kd+uFill*max(dot(wn,uFillDir),0.))+uKey*pow(max(dot(wn,h),0.),40.)*.06*kd+uRim*fr;
+        gl_FragColor=vec4(c,1.);}`;
+    const figMats = new Map();
+    const figMat = (n) => {
+      const map = K.tex(n); if (figMats.has(map)) return figMats.get(map);
+      const m = new THREE.ShaderMaterial({ uniforms: Object.assign({ map: { value: map } }, figU), vertexShader: FIG_V, fragmentShader: FIG_F, side: THREE.DoubleSide });
+      figMats.set(map, m); return m;
+    };
     // crew lockers
     const lockC = cv(256, 512, (g) => { g.fillStyle = '#3a3f47'; g.fillRect(0, 0, 256, 512); g.strokeStyle = '#15171b'; g.lineWidth = 6; g.strokeRect(6, 6, 244, 500); g.fillStyle = '#15171b'; for (let i = 0; i < 6; i++) g.fillRect(40, 40 + i * 14, 176, 6); for (let i = 0; i < 6; i++) g.fillRect(40, 420 + i * 12, 176, 5); g.fillStyle = '#c2531f'; g.fillRect(40, 200, 60, 10); g.fillStyle = 'rgba(230,235,240,.8)'; g.font = '700 26px monospace'; g.fillText('CREW', 40, 250); g.fillStyle = '#9aa0a8'; g.fillRect(200, 262, 12, 80); });
     const lockM = std('#ffffff', .55, .55, { map: tx(lockC) });
@@ -246,7 +308,7 @@
     // extinguisher cabinets
     const extC = cv(128, 256, (g) => { g.fillStyle = '#9c1f18'; g.fillRect(0, 0, 128, 256); g.fillStyle = '#e8e8e8'; g.fillRect(10, 10, 108, 28); g.fillStyle = '#9c1f18'; g.font = '800 20px monospace'; g.fillText('FIRE', 36, 31); g.fillStyle = '#1a0a08'; g.fillRect(24, 52, 80, 190); g.fillStyle = '#d8342a'; g.fillRect(40, 80, 48, 150); g.fillStyle = '#222'; g.fillRect(50, 62, 28, 20); });
     const extM = std('#ffffff', .4, .2, { map: tx(extC) });
-    [[1, -12.2], [-1, -23.6]].forEach(([s, z]) => box(.3, 1.3, .7, s > 0 ? [M.red, extM, M.red, M.red, M.red, M.red] : [extM, M.red, M.red, M.red, M.red, M.red], s * 7.7, 1.6, z));
+    [[1, -13.3], [-1, -23.6]].forEach(([s, z]) => box(.3, 1.3, .7, s > 0 ? [M.red, extM, M.red, M.red, M.red, M.red] : [extM, M.red, M.red, M.red, M.red, M.red], s * 7.7, 1.6, z));
     // valve wheels on the low pipes
     const valveM = std('#b3261e', .4, .5);
     [[-1, -5.5], [1, -16.8], [-1, -28.6], [1, -33]].forEach(([s, z]) => {
@@ -260,26 +322,70 @@
     const panM = new THREE.MeshStandardMaterial({ map: tx(panC(false)), emissiveMap: tx(panC(true)), emissive: C('#ffffff'), emissiveIntensity: 1.6, roughness: .5, metalness: .4 });
     [[1, -6.95, 4.3], [-1, -21.4, 3.9], [1, -33.7, 3.9]].forEach(([s, z, y]) => box(.12, 1.0, 1.35, s > 0 ? [M.gun, panM, M.gun, M.gun, M.gun, M.gun] : [panM, M.gun, M.gun, M.gun, M.gun, M.gun], s * 7.8, y, z));
 
-    // hangar: a holo table showing a rotating Roblox R6 figure
+    // hangar: a holo table projecting the character. A depth-only pass first, so the additive hologram shows just its
+    // outer surface (a clean, readable figure instead of every layer glowing through); texture detail comes through as brightness.
     const ht = group(4.6, 0, -17.2);
-    cyl(1.05, .72, 1.8, 24, M.gun, 0, .9, 0, 0, 0, 0, ht); cyl(1.12, 1.12, .08, 32, M.trim, 0, 1.84, 0, 0, 0, 0, ht);
-    const discC = cv(256, 256, (g) => { g.translate(128, 128); g.strokeStyle = 'rgba(127,216,255,.9)'; [120, 96, 70, 40].forEach((r, i) => { g.lineWidth = i ? 1.5 : 3; g.beginPath(); g.arc(0, 0, r, 0, 7); g.stroke(); }); for (let i = 0; i < 36; i++) { const a = i / 36 * Math.PI * 2; g.beginPath(); g.moveTo(Math.cos(a) * 100, Math.sin(a) * 100); g.lineTo(Math.cos(a) * 114, Math.sin(a) * 114); g.stroke(); } });
-    const disc = add(new THREE.CircleGeometry(1.02, 40), additive('#7fd8ff', 1.4, .8, { map: tx(discC), side: THREE.FrontSide }), 0, 1.89, 0, -Math.PI / 2, 0, 0, ht);
-    add(new THREE.CylinderGeometry(.95, 1.02, 2.4, 32, 1, true), additive('#7fd8ff', 1, .05), 0, 3.1, 0, 0, 0, 0, ht);
-    const fig = new THREE.Group(); fig.position.y = 2.05; fig.scale.setScalar(.34); ht.add(fig);
-    const edgeM = new THREE.LineBasicMaterial({ color: C('#7fd8ff').multiplyScalar(2.2), transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false });
-    const fillM = additive('#7fd8ff', .5, .12, { side: THREE.FrontSide });
-    [[0, 5.1, 0, 1.2, 1.2, 1.2], [0, 3.5, 0, 2, 2, 1], [-1.5, 3.5, 0, 1, 2, 1], [1.5, 3.5, 0, 1, 2, 1], [-.5, 1.5, 0, 1, 2, 1], [.5, 1.5, 0, 1, 2, 1]].forEach(([x, y, z, w, h, d]) => {
-      const geo = new THREE.BoxGeometry(w, h, d); add(geo, fillM, x, y, z, 0, 0, 0, fig);
-      const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeM); e.position.set(x, y, z); fig.add(e);
-    });
-    const scanR = add(new THREE.TorusGeometry(.9, .012, 6, 48), additive('#bfefff', 3, .8), 0, 2.2, 0, Math.PI / 2, 0, 0, ht);
-    upd.push((t) => {
-      if (zNow > 0 || zNow < -34) return;
-      fig.rotation.y = t * .5; fig.position.y = 2.05 + Math.sin(t * 1.3) * .05; disc.rotation.z = -t * .2;
-      edgeM.opacity = .75 + Math.sin(t * 13) * .08 + (Math.random() < .015 ? -.4 : 0); scanR.position.y = 2.2 + (.5 + .5 * Math.sin(t * 1.1)) * 2.0;
+    cyl(1.05, .72, 1.8, 32, M.gun, 0, .9, 0, 0, 0, 0, ht); cyl(1.12, 1.12, .08, 40, M.trim, 0, 1.84, 0, 0, 0, 0, ht);
+    add(new THREE.TorusGeometry(.76, .02, 6, 48), glow('#6fd6ff', 2.5), 0, .12, 0, Math.PI / 2, 0, 0, ht);
+    const disc = add(new THREE.CircleGeometry(1.02, 40), additive('#7fd8ff', 1.4, .8, { map: dialT, side: THREE.FrontSide }), 0, 1.89, 0, -Math.PI / 2, 0, 0, ht);
+    for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2, e = group(Math.sin(a) * 1.0, 1.88, Math.cos(a) * 1.0, a, ht); box(.12, .34, .12, M.gunDark, 0, .15, 0, -.35, 0, 0, e); ball(.045, glow('#bfeeff', 4), 0, .31, -.06, e); }   // emitters
+    const beamC = cv(64, 256, (g) => { const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.65, 'rgba(255,255,255,.3)'); gr.addColorStop(1, 'rgba(255,255,255,1)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 256); g.globalCompositeOperation = 'destination-out'; for (let x = 0; x < 64; x += 4) { g.fillStyle = `rgba(0,0,0,${Math.random() * .6})`; g.fillRect(x, 0, 2, 256); } });
+    add(new THREE.CylinderGeometry(1.14, .98, 2.9, 40, 1, true), additive('#7fd8ff', 1, .2, { map: clamp(tx(beamC)) }), 0, 3.35, 0, 0, 0, 0, ht);
+    const ringTxt = 'FURKANLUA · PILOT PROFILE · ROBLOX SCRIPTER · ';
+    const ring = add(new THREE.CylinderGeometry(1.3, 1.3, .14, 64, 1, true), additive('#9fe6ff', 1.6, .85, { side: THREE.FrontSide, map: textTex(2048, 36, (g) => {
+      g.font = '600 24px "IBM Plex Mono",monospace'; const w = g.measureText(ringTxt).width, n = Math.max(1, Math.floor(2048 / w));
+      g.setTransform(2048 / (n * w), 0, 0, 1, 0, 0); g.fillStyle = '#fff'; for (let i = 0; i < n; i++) g.fillText(ringTxt, i * w, 26);
+    }) }), 0, 2.1, 0, 0, 0, 0, ht);
+    const scanR = add(new THREE.TorusGeometry(.95, .01, 6, 64), additive('#bfefff', 3, .8), 0, 2.2, 0, Math.PI / 2, 0, 0, ht); scanR.userData.keep = true;
+    const holoMotes = motes(ht, 36, .9, 1.95, 4.7, '#9fe6ff', .045);
+    const holoF = group(0, 1.93, 0, 0, ht);
+    const holoU = { uT: { value: 0 }, uAmp: { value: 1 }, uCol: { value: C('#5fd0ff') }, uHi: { value: C('#e6fbff') }, uY0: { value: 1.93 }, uH: { value: 2.45 } };
+    const HOLO_F = `uniform sampler2D map;uniform vec3 uCol,uHi;uniform float uT,uAmp,uY0,uH;varying vec3 vN,vV;varying vec2 vUv;varying float vY;
+      float h1(float x){return fract(sin(x*91.345)*47453.21);}
+      void main(){vec4 tx=texture2D(map,vUv);if(tx.a<.45)discard;float lum=dot(tx.rgb,vec3(.299,.587,.114));
+        vec3 n=normalize(vN)*(gl_FrontFacing?1.:-1.);float fr=pow(1.-clamp(dot(n,normalize(vV)),0.,1.),2.2);float y=(vY-uY0)/uH;
+        float ln=.62+.38*sin(vY*160.-uT*6.);float sw=exp(-pow((fract(uT*.18)*1.5-.25-y)*9.,2.));float fl=step(.97,h1(floor(vY*24.)+floor(uT*13.)*3.7));
+        vec3 base=mix(uCol,tx.rgb*vec3(.55,.9,1.2),.28);
+        gl_FragColor=vec4((base*(.1+.8*lum)*ln+uCol*fr*1.5+uHi*sw*.55+uCol*fl*.4)*uAmp*smoothstep(-.02,.08,y),1.);}`;
+    const holoMats = new Map();
+    const holoMat = (n) => {
+      const map = K.tex(n); if (holoMats.has(map)) return holoMats.get(map);
+      const pair = [
+        new THREE.MeshBasicMaterial({ map, alphaTest: .45, side: THREE.DoubleSide, colorWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }),
+        new THREE.ShaderMaterial({ uniforms: Object.assign({ map: { value: map } }, holoU), vertexShader: FRES_V, fragmentShader: HOLO_F, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
+      ];
+      holoMats.set(map, pair); return pair;
+    };
+
+    bake(bay); bake(ht);
+    const noReflect = [];   // the figures' floor reflections sit behind their pedestals' anyway: skip them in the mirror pass
+    if (avatar && avatar.onReady) avatar.onReady((kit) => {
+      K = kit;
+      bayFig = kit.build(figMat); group(0, .062, 0, Math.PI, tt).add(bayFig.model);   // the rig faces -z; turn it to face out
+      holoFig = kit.build(holoMat, 2.45); holoF.add(holoFig.model);
+      [bayFig.model, holoFig.model].forEach((m) => { m.traverse((o) => { if (o.isMesh) o.frustumCulled = true; }); noReflect.push(m); });
     });
 
-    return { update(t, z) { if (z != null) zNow = z; upd.forEach((f) => f(t)); } };
+    // the bay only runs while it can be seen; its occupant waves as the pilot walks past. The hologram turns, flickers and
+    // now and then waves too.
+    let lastT = 0, bayWave = -9, bayArmed = true;
+    upd.push((t) => {
+      const dt = Math.min(.05, Math.max(0, t - lastT)); lastT = t;
+      bay.visible = zNow > -24;
+      if (bay.visible) {
+        tt.rotation.y = Math.sin(t * .3) * .55; bea.visible = Math.sin(t * 3) > -.3; bayMotes(dt);
+        if (bayArmed && zNow < -6.5 && zNow > -15) { bayArmed = false; bayWave = t; } else if (zNow > -3 || zNow < -19) bayArmed = true;
+        if (bayFig) K.idle(bayFig.J, t, t - bayWave < 2.3 ? t - bayWave : -1, 1.3);
+      }
+      ht.visible = zNow > -30;
+      if (ht.visible) {
+        holoU.uT.value = t; holoU.uAmp.value = .92 + Math.sin(t * 17) * .04 + (Math.random() < .012 ? -.45 : 0);
+        holoF.rotation.y = t * .45; holoF.position.set(Math.random() < .01 ? (Math.random() - .5) * .06 : 0, 1.93 + Math.sin(t * 1.3) * .03, 0);
+        disc.rotation.z = -t * .2; ring.rotation.y = -t * .25; scanR.position.y = 2.1 + (.5 + .5 * Math.sin(t * 1.1)) * 2.5; holoMotes(dt);
+        if (holoFig) { const w = t % 11 - 6; K.idle(holoFig.J, t, w >= 0 && w < 2.3 ? w : -1, 0); }
+      }
+    });
+
+    return { noReflect, update(t, z) { if (z != null) zNow = z; upd.forEach((f) => f(t)); } };
   };
 })();
